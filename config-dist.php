@@ -14,17 +14,21 @@
 # The settings defined here below
 
 
-# Either "production", "dev" or "prerelease"
+# Either "production", "dev", "demo" or "prerelease"
+# ("demo" and "prerelease" is reserved to be used only on the offical demo instances)
 Setting('MODE', 'production');
 
-# Either "en" or "de" or the filename (without extension) of
-# one of the other available localization files in the "/localization" directory
+# Either "en" or "de" or the directory name of
+# one of the other available localization folders in the "/localization" directory
 Setting('CULTURE', 'en');
 
 # This is used to define the first day of a week for calendar views in the frontend,
 # leave empty to use the locale default
 # Needs to be a number where Sunday = 0, Monday = 1 and so forth
 Setting('CALENDAR_FIRST_DAY_OF_WEEK', '');
+
+# If calendars should show week numbers
+Setting('CALENDAR_SHOW_WEEK_OF_YEAR', true);
 
 # To keep it simple: grocy does not handle any currency conversions,
 # this here is used to format all money values,
@@ -42,18 +46,21 @@ Setting('BASE_URL', '/');
 # see /data/plugins/DemoBarcodeLookupPlugin.php for an example implementation
 Setting('STOCK_BARCODE_LOOKUP_PLUGIN', 'DemoBarcodeLookupPlugin');
 
-# If, however, your webserver does not support URL rewriting,
-# set this to true
+# If, however, your webserver does not support URL rewriting, set this to true
 Setting('DISABLE_URL_REWRITING', false);
 
-# Specify an custom homepage if desired. By default the homepage will be set to the stock overview.
-# You can chosen one of the following values:
+# Specify an custom homepage if desired - by default the homepage will be set to the stock overview,
+# this needs to be one of the following values:
 # stock, shoppinglist, recipes, chores, tasks, batteries, equipment, calendar
 Setting('ENTRY_PAGE', 'stock');
 
 # Set this to true if you want to disable authentication / the login screen,
 # places where user context is needed will then use the default (first existing) user
 Setting('DISABLE_AUTH', false);
+
+# Set this to true if you want to disable the ability to scan a barcode via the device camera (Browser API)
+Setting('DISABLE_BROWSER_BARCODE_CAMERA_SCANNING', false);
+
 
 # Default user settings
 # These settings can be changed per user, here the defaults
@@ -97,8 +104,6 @@ DefaultUserSetting('show_clock_in_header', false);
 DefaultUserSetting('shopping_list_to_stock_workflow_auto_submit_when_prefilled', false);
 
 
-
-
 # Feature flags
 # grocy was initially about "stock management for your household", many other things
 # came and still come by, because they are useful - here you can disable the parts
@@ -112,3 +117,14 @@ Setting('FEATURE_FLAG_TASKS', true);
 Setting('FEATURE_FLAG_BATTERIES', true);
 Setting('FEATURE_FLAG_EQUIPMENT', true);
 Setting('FEATURE_FLAG_CALENDAR', true);
+
+
+# Sub feature flags
+Setting('FEATURE_FLAG_STOCK_PRICE_TRACKING', true);
+Setting('FEATURE_FLAG_STOCK_LOCATION_TRACKING', true);
+Setting('FEATURE_FLAG_STOCK_BEST_BEFORE_DATE_TRACKING', true);
+Setting('FEATURE_FLAG_STOCK_PRODUCT_OPENED_TRACKING', true);
+
+
+# Feature settings
+Setting('FEATURE_SETTING_STOCK_COUNT_OPENED_PRODUCTS_AGAINST_MINIMUM_STOCK_AMOUNT', true); // When set to false, opened products will not be considered for minimum stock amounts

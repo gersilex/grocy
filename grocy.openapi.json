@@ -4,9 +4,6 @@
 		"title": "grocy REST API",
 		"description": "Authentication is done via API keys (header *GROCY-API-KEY* or same named query parameter), which you can manage [here](PlaceHolderManageApiKeysUrl).<br>Additionally requests from within the frontend are also valid (via session cookie).",
 		"version": "xxx",
-		"contact": {
-			"email": "bernd@berrnd.de"
-		},
 		"license": {
 			"name": "grocy.info",
 			"url": "https://grocy.info"
@@ -655,6 +652,37 @@
 						"schema": {
 							"type": "string"
 						}
+					},
+					{
+						"in": "query",
+						"name": "force_serve_as",
+						"required": false,
+						"description": "Force the file to be served as the given type",
+						"schema": {
+							"type": "string",
+							"enum": [
+								"picture"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "best_fit_height",
+						"required": false,
+						"description": "Only when using `force_serve_as` = `picture`: Downscale the picture to the given height while maintaining the aspect ratio",
+						"schema": {
+							"type": "integer"
+						}
+					}
+					,
+					{
+						"in": "query",
+						"name": "best_fit_width",
+						"required": false,
+						"description": "Only when using `force_serve_as` = `picture`: Downscale the picture to the given width while maintaining the aspect ratio",
+						"schema": {
+							"type": "integer"
+						}
 					}
 				],
 				"responses": {
@@ -1032,7 +1060,7 @@
 				],
 				"parameters": [
 					{
-						"in": "path",
+						"in": "query",
 						"name": "expiring_days",
 						"required": false,
 						"description": "The number of days in which products are considered expiring soon",
@@ -1089,47 +1117,6 @@
 					},
 					"400": {
 						"description": "The operation was not successful (possible errors are: Not existing product)",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/GenericErrorResponse"
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/stock/products/by-barcode/{barcode}": {
-			"get": {
-				"summary": "Returns details of the given product by its barcode",
-				"tags": [
-					"Stock"
-				],
-				"parameters": [
-					{
-						"in": "path",
-						"name": "barcode",
-						"required": true,
-						"description": "Barcode",
-						"schema": {
-							"type": "string"
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "A ProductDetailsResponse object",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/ProductDetailsResponse"
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "The operation was not successful (possible errors are: Unknown barcode)",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -1255,7 +1242,7 @@
 								"properties": {
 									"amount": {
 										"type": "number",
-										"format": "double",
+										"format": "number",
 										"description": "The amount to add - please note that when tare weight handling for the product is enabled, this needs to be the amount including the container weight (gross), the amount to be posted will be automatically calculated based on what is in stock and the defined tare weight"
 									},
 									"best_before_date": {
@@ -1268,7 +1255,7 @@
 									},
 									"price": {
 										"type": "number",
-										"format": "double",
+										"format": "number",
 										"description": "The price per purchase quantity unit in configured currency"
 									},
 									"location_id": {
@@ -1336,7 +1323,7 @@
 								"type": "object",
 								"properties": {
 									"amount": {
-										"type": "double",
+										"type": "number",
 										"description": "The amount to remove - please note that when tare weight handling for the product is enabled, this needs to be the amount including the container weight (gross), the amount to be posted will be automatically calculated based on what is in stock and the defined tare weight"
 									},
 									"transaction_type": {
@@ -1429,7 +1416,7 @@
 									},
 									"price": {
 										"type": "number",
-										"format": "double",
+										"format": "number",
 										"description": "If omitted, the last price of the product is used (only applies to added products)"
 									}
 								}
@@ -1486,7 +1473,344 @@
 								"type": "object",
 								"properties": {
 									"amount": {
-										"type": "double",
+										"type": "number",
+										"description": "The amount to mark as opened"
+									},
+									"stock_entry_id": {
+										"type": "string",
+										"description": "A specific stock entry id to open, if used, the amount has to be 1"
+									}
+								},
+								"example": {
+									"amount": 1
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "The operation was successful",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StockLogEntry"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "The operation was not successful (possible errors are: Not existing product, given amount > current unopened stock amount)",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GenericErrorResponse"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/stock/products/by-barcode/{barcode}": {
+			"get": {
+				"summary": "Returns details of the given product by its barcode",
+				"tags": [
+					"Stock"
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "barcode",
+						"required": true,
+						"description": "Barcode",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "A ProductDetailsResponse object",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ProductDetailsResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "The operation was not successful (possible errors are: Unknown barcode)",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GenericErrorResponse"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/stock/products/by-barcode/{barcode}/add": {
+			"post": {
+				"summary": "Adds the given amount of the by its barcode given product to stock",
+				"tags": [
+					"Stock"
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "barcode",
+						"required": true,
+						"description": "Barcode",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"amount": {
+										"type": "number",
+										"format": "number",
+										"description": "The amount to add - please note that when tare weight handling for the product is enabled, this needs to be the amount including the container weight (gross), the amount to be posted will be automatically calculated based on what is in stock and the defined tare weight"
+									},
+									"best_before_date": {
+										"type": "string",
+										"format": "date",
+										"description": "The best before date of the product to add, when omitted, the current date is used"
+									},
+									"transaction_type": {
+										"$ref": "#/components/internalSchemas/StockTransactionType"
+									},
+									"price": {
+										"type": "number",
+										"format": "number",
+										"description": "The price per purchase quantity unit in configured currency"
+									},
+									"location_id": {
+										"type": "number",
+										"format": "integer",
+										"description": "If omitted, the default location of the product is used"
+									}
+								},
+								"example": {
+									"amount": 1,
+									"best_before_date": "2019-01-19",
+									"transaction_type": "purchase",
+									"price": "1.99"
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "The operation was successful",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StockLogEntry"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "The operation was not successful (possible errors are: Not existing product, invalid transaction type)",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GenericErrorResponse"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/stock/products/by-barcode/{barcode}/consume": {
+			"post": {
+				"summary": "Removes the given amount of the by its barcode given product from stock",
+				"tags": [
+					"Stock"
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "barcode",
+						"required": true,
+						"description": "Barcode",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"amount": {
+										"type": "number",
+										"description": "The amount to remove - please note that when tare weight handling for the product is enabled, this needs to be the amount including the container weight (gross), the amount to be posted will be automatically calculated based on what is in stock and the defined tare weight"
+									},
+									"transaction_type": {
+										"$ref": "#/components/internalSchemas/StockTransactionType"
+									},
+									"spoiled": {
+										"type": "boolean",
+										"description": "True when the given product was spoiled, defaults to false"
+									},
+									"stock_entry_id": {
+										"type": "string",
+										"description": "A specific stock entry id to consume, if used, the amount has to be 1"
+									},
+									"recipe_id": {
+										"type": "number",
+										"format": "integer",
+										"description": "A valid recipe id for which this product was used (for statistical purposes only)"
+									}
+								},
+								"example": {
+									"amount": 1,
+									"transaction_type": "consume",
+									"spoiled": false
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "The operation was successful",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StockLogEntry"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "The operation was not successful (possible errors are: Not existing product, invalid transaction type, given amount > current stock amount)",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GenericErrorResponse"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/stock/products/by-barcode/{barcode}/inventory": {
+			"post": {
+				"summary": "Inventories the by its barcode given product (adds/removes based on the given new amount)",
+				"tags": [
+					"Stock"
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "barcode",
+						"required": true,
+						"description": "Barcode",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"new_amount": {
+										"type": "integer",
+										"description": "The new current amount for the given product - please note that when tare weight handling for the product is enabled, this needs to be the amount including the container weight (gross), the amount to be posted will be automatically calculated based on what is in stock and the defined tare weight"
+									},
+									"best_before_date": {
+										"type": "string",
+										"format": "date",
+										"description": "The best before date which applies to added products"
+									},
+									"location_id": {
+										"type": "number",
+										"format": "integer",
+										"description": "If omitted, the default location of the product is used (only applies to added products)"
+									},
+									"price": {
+										"type": "number",
+										"format": "number",
+										"description": "If omitted, the last price of the product is used (only applies to added products)"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "The operation was successful",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StockLogEntry"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "The operation was not successful (possible errors are: Not existing product)",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GenericErrorResponse"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/stock/products/by-barcode/{barcode}/open": {
+			"post": {
+				"summary": "Marks the given amount of the by its barcode given product as opened",
+				"tags": [
+					"Stock"
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "barcode",
+						"required": true,
+						"description": "Barcode",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"amount": {
+										"type": "number",
 										"description": "The amount to mark as opened"
 									},
 									"stock_entry_id": {
@@ -1702,6 +2026,47 @@
 					},
 					"400": {
 						"description": "The operation was not successful (possible errors are: Not existing shopping list, Invalid product id supplied)",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GenericErrorResponse"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/stock/bookings/{bookingId}": {
+			"get": {
+				"summary": "Returns the given stock booking",
+				"tags": [
+					"Stock"
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "bookingId",
+						"required": true,
+						"description": "A valid stock booking id",
+						"schema": {
+							"type": "integer"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "A StockLogEntry object",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StockLogEntry"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "The operation was not successful (possible errors are: Invalid stock booking id)",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -2100,6 +2465,48 @@
 				}
 			}
 		},
+		"/chores/executions/calculate-next-assignments": {
+			"post": {
+				"summary": "(Re)calculates all next user assignments of all chores",
+				"tags": [
+					"Chores"
+				],
+				"requestBody": {
+					"required": false,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"chore_id": {
+										"type": "integer",
+										"description": "The chore id of the chore which next user assignment should be (re)calculated, when omitted, the next user assignments of all chores will (re)caluclated"
+									}
+								},
+								"example": {
+									"chore_id": 1
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"204": {
+						"description": "The operation was successful"
+					},
+					"400": {
+						"description": "The operation was not successful",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/GenericErrorResponse"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
 		"/batteries": {
 			"get": {
 				"summary": "Returns all batteries incl. the next estimated charge time per battery",
@@ -2430,6 +2837,7 @@
 					"batteries",
 					"locations",
 					"quantity_units",
+					"quantity_unit_conversions",
 					"shopping_list",
 					"shopping_lists",
 					"recipes",
@@ -2441,6 +2849,8 @@
 					"equipment",
 					"api_keys",
 					"userfields",
+					"userentities",
+					"userobjects",
 					"meal_plan"
 				]
 			},
@@ -2493,11 +2903,11 @@
 					},
 					"qu_factor_purchase_to_stock": {
 						"type": "number",
-						"format": "double"
+						"format": "number"
 					},
 					"tare_weight": {
 						"type": "number",
-						"format": "double"
+						"format": "number"
 					},
 					"barcode": {
 						"type": "string",
@@ -2619,7 +3029,7 @@
 						"type": "integer"
 					},
 					"amount": {
-						"type": "double"
+						"type": "number"
 					},
 					"best_before_date": {
 						"type": "string",
@@ -2634,7 +3044,7 @@
 						"description": "A unique id which references this stock entry during its lifetime"
 					},
 					"price": {
-						"type": "double"
+						"type": "number"
 					},
 					"open": {
 						"type": "integer"
@@ -2679,7 +3089,7 @@
 					},
 					"costs": {
 						"type": "number",
-						"format": "double"
+						"format": "number"
 					}
 				},
 				"example": {
@@ -2722,7 +3132,7 @@
 					},
 					"last_price": {
 						"type": "number",
-						"format": "double"
+						"format": "number"
 					},
 					"location": {
 						"$ref": "#/components/schemas/Location"
@@ -2733,7 +3143,7 @@
 					},
 					"spoil_rate_percent": {
 						"type": "number",
-						"format": "double"
+						"format": "number"
 					}
 				},
 				"example": {
@@ -2798,7 +3208,7 @@
 					},
 					"price": {
 						"type": "number",
-						"format": "double"
+						"format": "number"
 					}
 				}
 			},
@@ -2819,7 +3229,7 @@
 					},
 					"qu_factor_purchase_to_stock": {
 						"type": "number",
-						"format": "double"
+						"format": "number"
 					},
 					"barcode": {
 						"type": "string",
@@ -2852,6 +3262,9 @@
 					"next_estimated_execution_time": {
 						"type": "string",
 						"format": "date-time"
+					},
+					"next_execution_assigned_user": {
+						"$ref": "#/components/schemas/UserDto"
 					}
 				},
 				"example": {
@@ -3018,7 +3431,7 @@
 						"type": "string"
 					},
 					"amount": {
-						"type": "double",
+						"type": "number",
 						"minimum": 0,
 						"default": 0,
 						"description": "The manual entered amount"
@@ -3090,14 +3503,38 @@
 						"type": "string",
 						"enum": [
 							"manually",
-							"dynamic-regular"
+							"dynamic-regular",
+							"daily",
+							"weekly",
+							"monthly"
 						]
+					},
+					"period_config": {
+						"type": "string"
 					},
 					"period_days": {
 						"type": "integer"
 					},
 					"track_date_only": {
 						"type": "boolean"
+					},
+					"rollover": {
+						"type": "boolean"
+					},
+					"assignment_type": {
+						"type": "string",
+						"enum": [
+							"no-assignment",
+							"who-least-did-first",
+							"random",
+							"in-alphabetical-order"
+						]
+					},
+					"assignment_config": {
+						"type": "string"
+					},
+					"next_execution_assigned_to_user_id": {
+						"type": "integer"
 					},
 					"row_created_timestamp": {
 						"type": "string",
@@ -3134,7 +3571,7 @@
 						"type": "integer"
 					},
 					"amount": {
-						"type": "double"
+						"type": "number"
 					},
 					"best_before_date": {
 						"type": "string",
@@ -3182,12 +3619,25 @@
 						"type": "integer"
 					},
 					"amount": {
-						"type": "double"
+						"type": "number"
+					},
+					"amount_aggregated": {
+						"type": "number"
+					},
+					"amount_opened": {
+						"type": "number"
+					},
+					"amount_opened_aggregated": {
+						"type": "number"
 					},
 					"best_before_date": {
 						"type": "string",
 						"format": "date",
 						"description": "The next best before date for this product"
+					},
+					"is_aggregated_amount": {
+						"type": "boolean",
+						"description": "Indicates wheter this product has sub-products or not / if the fields `amount_aggregated` and `amount_opened_aggregated` are filled"
 					}
 				}
 			},
@@ -3231,19 +3681,19 @@
 					"expiring_products": {
 						"type": "array",
 						"items":{
-							"$ref": "#/components/schemas/Product"
+							"$ref": "#/components/schemas/CurrentStockResponse"
 						}
 					},
 					"expired_products": {
 						"type": "array",
 						"items": {
-							"$ref": "#/components/schemas/Product"
+							"$ref": "#/components/schemas/CurrentStockResponse"
 						}
 					},
 					"missing_products": {
 						"type": "array",
 						"items": {
-							"$ref": "#/components/schemas/Product"
+							"$ref": "#/components/schemas/CurrentStockResponse"
 						}
 					}
 				}

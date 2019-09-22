@@ -12,6 +12,8 @@ class UserfieldsService extends BaseService
 	const USERFIELD_TYPE_DATETIME = 'datetime';
 	const USERFIELD_TYPE_CHECKBOX = 'checkbox';
 	const USERFIELD_TYPE_PRESET_LIST = 'preset-list';
+	const USERFIELD_TYPE_PRESET_CHECKLIST = 'preset-checklist';
+	const USERFIELD_TYPE_LINK = 'link';
 
 	public function __construct()
 	{
@@ -107,7 +109,15 @@ class UserfieldsService extends BaseService
 
 	public function GetEntities()
 	{
-		return $this->OpenApiSpec->components->internalSchemas->ExposedEntity->enum;
+		$exposedDefaultEntities = $this->OpenApiSpec->components->internalSchemas->ExposedEntity->enum;
+		
+		$userentities = array();
+		foreach ($this->Database->userentities()->orderBy('name') as $userentity)
+		{
+			$userentities[] = 'userentity-' . $userentity->name;
+		}
+
+		return array_merge($exposedDefaultEntities, $userentities);
 	}
 
 	public function GetFieldTypes()
@@ -117,6 +127,6 @@ class UserfieldsService extends BaseService
 
 	private function IsValidEntity($entity)
 	{
-		return in_array($entity, $this->OpenApiSpec->components->internalSchemas->ExposedEntity->enum);
+		return in_array($entity, $this->GetEntities());
 	}
 }

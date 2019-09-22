@@ -4,7 +4,7 @@
 	'columnDefs': [
 		{ 'orderData': 2, 'targets': 1 }
 	],
-	'language': JSON.parse(__t('datatables_localization')),
+	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
 	'scrollY': false,
 	'colReorder': true,
 	'stateSave': true,
@@ -41,6 +41,15 @@ if (typeof recipe !== "undefined")
 	var cardId = "#recipe-card-" + recipe;
 	$(cardId).addClass("bg-primary").addClass("text-white");
 	$(cardId)[0].scrollIntoView();
+}
+
+if (GetUriParam("search") !== undefined)
+{
+	$("#search").val(GetUriParam("search"));
+	setTimeout(function ()
+	{
+		$("#search").keyup();
+	}, 50);
 }
 
 $("a[data-toggle='tab']").on("shown.bs.tab", function(e)

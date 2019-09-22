@@ -63,13 +63,15 @@ class RecipesController extends BaseController
 			'selectedRecipe' => $selectedRecipe,
 			'selectedRecipePositionsResolved' => $selectedRecipePositionsResolved,
 			'products' => $this->Database->products(),
-			'quantityunits' => $this->Database->quantity_units(),
+			'quantityUnits' => $this->Database->quantity_units(),
 			'selectedRecipeSubRecipes' => $selectedRecipeSubRecipes,
 			'selectedRecipeSubRecipesPositions' => $selectedRecipeSubRecipesPositions,
 			'includedRecipeIdsAbsolute' => $includedRecipeIdsAbsolute,
 			'selectedRecipeTotalCosts' => FindObjectInArrayByPropertyValue($recipesResolved, 'recipe_id', $selectedRecipe->id)->costs,
+			'selectedRecipeTotalCalories' => FindObjectInArrayByPropertyValue($recipesResolved, 'recipe_id', $selectedRecipe->id)->calories,
 			'userfields' => $this->UserfieldsService->GetFields('recipes'),
-			'userfieldValues' => $this->UserfieldsService->GetAllValues('recipes')
+			'userfieldValues' => $this->UserfieldsService->GetAllValues('recipes'),
+			'quantityUnitConversionsResolved' => $this->Database->quantity_unit_conversions_resolved()
 		]);
 	}
 
@@ -96,7 +98,8 @@ class RecipesController extends BaseController
 			'recipesResolved' => $this->RecipesService->GetRecipesResolved(),
 			'recipes' =>  $this->Database->recipes()->where('type', RecipesService::RECIPE_TYPE_NORMAL)->orderBy('name'),
 			'recipeNestings' =>  $this->Database->recipes_nestings()->where('recipe_id', $recipeId),
-			'userfields' => $this->UserfieldsService->GetFields('recipes')
+			'userfields' => $this->UserfieldsService->GetFields('recipes'),
+			'quantityUnitConversionsResolved' => $this->Database->quantity_unit_conversions_resolved()
 		]);
 	}
 
@@ -107,8 +110,10 @@ class RecipesController extends BaseController
 			return $this->AppContainer->view->render($response, 'recipeposform', [
 				'mode' => 'create',
 				'recipe' => $this->Database->recipes($args['recipeId']),
+				'recipePos' => new \stdClass(),
 				'products' => $this->Database->products()->orderBy('name'),
-				'quantityUnits' => $this->Database->quantity_units()->orderBy('name')
+				'quantityUnits' => $this->Database->quantity_units()->orderBy('name'),
+				'quantityUnitConversionsResolved' => $this->Database->quantity_unit_conversions_resolved()
 			]);
 		}
 		else
@@ -118,7 +123,8 @@ class RecipesController extends BaseController
 				'recipe' =>  $this->Database->recipes($args['recipeId']),
 				'recipePos' => $this->Database->recipes_pos($args['recipePosId']),
 				'products' => $this->Database->products()->orderBy('name'),
-				'quantityUnits' => $this->Database->quantity_units()->orderBy('name')
+				'quantityUnits' => $this->Database->quantity_units()->orderBy('name'),
+				'quantityUnitConversionsResolved' => $this->Database->quantity_unit_conversions_resolved()
 			]);
 		}
 	}
@@ -130,12 +136,19 @@ class RecipesController extends BaseController
 		$events = array();
 		foreach($this->Database->meal_plan() as $mealPlanEntry)
 		{
+			$recipe = FindObjectInArrayByPropertyValue($recipes, 'id', $mealPlanEntry['recipe_id']);
+			$title = '';
+			if ($recipe !== null)
+			{
+				$title = $recipe->name;
+			}
+
 			$events[] = array(
 				'id' => $mealPlanEntry['id'],
-				'title' => FindObjectInArrayByPropertyValue($recipes, 'id', $mealPlanEntry['recipe_id'])->name,
+				'title' => $title,
 				'start' => $mealPlanEntry['day'],
 				'date_format' => 'date',
-				'recipe' => json_encode(FindObjectInArrayByPropertyValue($recipes, 'id', $mealPlanEntry['recipe_id'])),
+				'recipe' => json_encode($recipe),
 				'mealPlanEntry' => json_encode($mealPlanEntry)
 			);
 		}

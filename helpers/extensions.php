@@ -88,10 +88,20 @@ function SumArrayValue($array, $propertyName)
 	return $sum;
 }
 
-function GetClassConstants($className)
+function GetClassConstants($className, $prefix = null)
 {
 	$r = new ReflectionClass($className);
-	return $r->getConstants();
+	$constants = $r->getConstants();
+
+	if ($prefix === null)
+	{
+		return $constants;
+	}
+	else
+	{
+		$matchingKeys = preg_grep('!^' . $prefix . '!', array_keys($constants));
+		return array_intersect_key($constants, array_flip($matchingKeys));
+	}
 }
 
 function RandomString($length, $allowedChars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
@@ -140,7 +150,18 @@ function Setting(string $name, $value)
 		}
 		elseif (getenv('GROCY_' . $name) !== false) // An environment variable with the same name and prefix GROCY_ overwrites the given setting
 		{
-			define('GROCY_' . $name, getenv('GROCY_' . $name));
+			if (strtolower(getenv('GROCY_' . $name)) === "true")
+			{
+				define('GROCY_' . $name, true);
+			}
+			elseif (strtolower(getenv('GROCY_' . $name)) === "false")
+			{
+				define('GROCY_' . $name, false);
+			}
+			else
+			{
+				define('GROCY_' . $name, getenv('GROCY_' . $name));
+			}
 		}
 		else
 		{
@@ -163,7 +184,7 @@ function DefaultUserSetting(string $name, $value)
 function GetUserDisplayName($user)
 {
 	$displayName = '';
-	
+
 	if (empty($user->first_name) && !empty($user->last_name))
 	{
 		$displayName = $user->last_name;
@@ -192,4 +213,26 @@ function IsValidFileName($fileName)
 	}
 
 	return false;
+}
+
+function IsJsonString($text)
+{
+	json_decode($text);
+	return (json_last_error() == JSON_ERROR_NONE);
+}
+
+function string_starts_with($haystack, $needle)
+{
+	return (substr($haystack, 0, strlen($needle)) === $needle);
+}
+
+function string_ends_with($haystack, $needle)
+{
+	$length = strlen($needle);
+	if ($length == 0)
+	{
+		return true;
+	}
+
+	return (substr($haystack, -$length) === $needle);
 }

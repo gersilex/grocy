@@ -26,12 +26,16 @@
 		jsonData.recipe_id = Grocy.Components.RecipePicker.GetValue();
 	}
 
+	var bookingResponse = null;
+
 	Grocy.Api.Get('stock/products/' + jsonForm.product_id,
 		function(productDetails)
 		{
 			Grocy.Api.Post(apiUrl, jsonData,
 				function(result)
 				{
+					bookingResponse = result;
+
 					var addBarcode = GetUriParam('addbarcodetoselection');
 					if (addBarcode !== undefined)
 					{
@@ -65,23 +69,42 @@
 						$("#use_specific_stock_entry").click();
 					}
 
-					Grocy.FrontendHelpers.EndUiBusy("consume-form");
-					toastr.success(__t('Removed %1$s of %2$s from stock', jsonForm.amount + " " + __n(jsonForm.amount, productDetails.quantity_unit_stock.name, productDetails.quantity_unit_stock.name_plural), productDetails.product.name) + '<br><a class="btn btn-secondary btn-sm mt-2" href="#" onclick="UndoStockBooking(' + result.id + ')"><i class="fas fa-undo"></i> ' + __t("Undo") + '</a>');
-
-					$("#amount").attr("min", "1");
-					$("#amount").attr("max", "999999");
-					$("#amount").attr("step", "1");
-					$("#amount").parent().find(".invalid-feedback").text(__t('The amount cannot be lower than %s', '1'));
-					$('#amount').val(Grocy.UserSettings.stock_default_consume_amount);
-					$('#amount_qu_unit').text("");
-					$("#tare-weight-handling-info").addClass("d-none");
-					Grocy.Components.ProductPicker.Clear();
-					if (Grocy.FeatureFlags.GROCY_FEATURE_FLAG_RECIPES)
+					if (productDetails.product.enable_tare_weight_handling == 1)
 					{
-						Grocy.Components.RecipePicker.Clear();
+						var successMessage = __t('Removed %1$s of %2$s from stock', Math.abs(jsonForm.amount - parseFloat(productDetails.product.tare_weight)) + " " + __n(jsonForm.amount, productDetails.quantity_unit_stock.name, productDetails.quantity_unit_stock.name_plural), productDetails.product.name) + '<br><a class="btn btn-secondary btn-sm mt-2" href="#" onclick="UndoStockBooking(' + bookingResponse.id + ')"><i class="fas fa-undo"></i> ' + __t("Undo") + '</a>';
 					}
-					Grocy.Components.ProductPicker.GetInputElement().focus();
-					Grocy.FrontendHelpers.ValidateForm('consume-form');
+					else
+					{
+						var successMessage =__t('Removed %1$s of %2$s from stock', Math.abs(jsonForm.amount) + " " + __n(jsonForm.amount, productDetails.quantity_unit_stock.name, productDetails.quantity_unit_stock.name_plural), productDetails.product.name) + '<br><a class="btn btn-secondary btn-sm mt-2" href="#" onclick="UndoStockBooking(' + bookingResponse.id + ')"><i class="fas fa-undo"></i> ' + __t("Undo") + '</a>';
+					}
+
+					if (GetUriParam("embedded") !== undefined)
+					{
+						window.parent.postMessage(WindowMessageBag("ProductChanged", jsonForm.product_id), Grocy.BaseUrl);
+						window.parent.postMessage(WindowMessageBag("ShowSuccessMessage", successMessage), Grocy.BaseUrl);
+						window.parent.postMessage(WindowMessageBag("CloseAllModals"), Grocy.BaseUrl);
+					}
+					else
+					{
+
+						Grocy.FrontendHelpers.EndUiBusy("consume-form");
+						toastr.success(successMessage);
+
+						$("#amount").attr("min", "1");
+						$("#amount").attr("max", "999999");
+						$("#amount").attr("step", "1");
+						$("#amount").parent().find(".invalid-feedback").text(__t('The amount cannot be lower than %s', '1'));
+						$('#amount').val(Grocy.UserSettings.stock_default_consume_amount);
+						$('#amount_qu_unit').text("");
+						$("#tare-weight-handling-info").addClass("d-none");
+						Grocy.Components.ProductPicker.Clear();
+						if (Grocy.FeatureFlags.GROCY_FEATURE_FLAG_RECIPES)
+						{
+							Grocy.Components.RecipePicker.Clear();
+						}
+						Grocy.Components.ProductPicker.GetInputElement().focus();
+						Grocy.FrontendHelpers.ValidateForm('consume-form');
+					}
 				},
 				function(xhr)
 				{
@@ -200,7 +223,7 @@ Grocy.Components.ProductPicker.GetPicker().on('change', function(e)
 					$("#tare-weight-handling-info").addClass("d-none");
 				}
 
-				if ((productDetails.stock_amount || 0) === 0)
+				if ((parseFloat(productDetails.stock_amount) || 0) === 0)
 				{
 					Grocy.Components.ProductPicker.Clear();
 					Grocy.FrontendHelpers.ValidateForm('consume-form');
@@ -242,6 +265,12 @@ Grocy.Components.ProductPicker.GetPicker().on('change', function(e)
 
 					for (i = 0; i < stockEntry.amount; i++)
 					{
+						// Do this only for the first 50 entries to prevent a very long loop (is more anytime needed)?
+						if (i > 50)
+						{
+							break;
+						}
+
 						$("#specific_stock_entry").append($("<option>", {
 							value: stockEntry.stock_id,
 							text: __t("Expires on %1$s; Bought on %2$s", moment(stockEntry.best_before_date).format("YYYY-MM-DD"), moment(stockEntry.purchased_date).format("YYYY-MM-DD")) + "; " + openTxt
@@ -258,6 +287,7 @@ Grocy.Components.ProductPicker.GetPicker().on('change', function(e)
 });
 
 $('#amount').val(Grocy.UserSettings.stock_default_consume_amount);
+Grocy.Components.ProductPicker.GetPicker().trigger('change');
 Grocy.Components.ProductPicker.GetInputElement().focus();
 Grocy.FrontendHelpers.ValidateForm('consume-form');
 

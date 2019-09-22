@@ -10,10 +10,13 @@
 
 @push('pageScripts')
 	<script src="{{ $U('/node_modules/TagManager/tagmanager.js?v=', true) }}{{ $version }}"></script>
+	<script src="{{ $U('/node_modules/datatables.net-rowgroup/js/dataTables.rowGroup.min.js?v=', true) }}{{ $version }}"></script>
+	<script src="{{ $U('/node_modules/datatables.net-rowgroup-bs4/js/rowGroup.bootstrap4.min.js?v=', true) }}{{ $version }}"></script>
 @endpush
 
 @push('pageStyles')
 	<link href="{{ $U('/node_modules/TagManager/tagmanager.css?v=', true) }}{{ $version }}" rel="stylesheet">
+	<link href="{{ $U('/node_modules/datatables.net-rowgroup-bs4/css/rowGroup.bootstrap4.min.css?v=', true) }}{{ $version }}" rel="stylesheet">
 @endpush
 
 @section('content')
@@ -40,6 +43,25 @@
 				<div class="invalid-feedback">{{ $__t('A name is required') }}</div>
 			</div>
 
+			@php $prefillById = ''; if($mode=='edit') { $prefillById = $product->parent_product_id; } @endphp
+			@php
+				$hint = '';
+				if ($isSubProductOfOthers)
+				{
+					$hint = $__t('Not possible because this product is already used as a parent product in another product');
+				}
+			@endphp
+			@include('components.productpicker', array(
+				'products' => $products,
+				'nextInputSelector' => '#barcode-taginput',
+				'prefillById' => $prefillById,
+				'disallowAllProductWorkflows' => true,
+				'isRequired' => false,
+				'label' => 'Parent product',
+				'disabled' => $isSubProductOfOthers,
+				'hint' => $hint
+			))
+
 			<div class="form-group">
 				<label for="description">{{ $__t('Description') }}</label>
 				<textarea class="form-control wysiwyg-editor" id="description" name="description">@if($mode == 'edit'){{ $product->description }}@endif</textarea>
@@ -51,6 +73,7 @@
 				<div id="barcode-taginput-container"></div>
 			</div>
 
+			@if(GROCY_FEATURE_FLAG_STOCK_LOCATION_TRACKING)
 			<div class="form-group">
 				<label for="location_id">{{ $__t('Location') }}</label>
 				<select required class="form-control" id="location_id" name="location_id">
@@ -61,6 +84,9 @@
 				</select>
 				<div class="invalid-feedback">{{ $__t('A location is required') }}</div>
 			</div>
+			@else
+			<input type="hidden" name="location_id" id="location_id" value="1">
+			@endif
 
 			@php if($mode == 'edit') { $value = $product->min_stock_amount; } else { $value = 0; } @endphp
 			@include('components.numberpicker', array(
@@ -117,7 +143,7 @@
 				<select required class="form-control input-group-qu" id="qu_id_stock" name="qu_id_stock">
 					<option></option>
 					@foreach($quantityunits as $quantityunit)
-						<option @if($mode == 'edit' && $quantityunit->id == $product->qu_id_stock) selected="selected" @endif value="{{ $quantityunit->id }}">{{ $quantityunit->name }}</option>
+						<option @if($mode == 'edit' && $quantityunit->id == $product->qu_id_stock) selected="selected" @endif value="{{ $quantityunit->id }}" data-plural-form="{{ $quantityunit->name_plural }}">{{ $quantityunit->name }}</option>
 					@endforeach
 				</select>
 				<div class="invalid-feedback">{{ $__t('A quantity unit is required') }}</div>
@@ -164,6 +190,7 @@
 				'additionalAttributes' => $additionalAttributes,
 				'hintId' => 'tare_weight_qu_info'
 			))
+			@php $additionalAttributes = '' @endphp
 
 			@if(GROCY_FEATURE_FLAG_RECIPES)
 			<div class="form-group">
@@ -175,6 +202,18 @@
 					</label>
 				</div>
 			</div>
+
+			@php if($mode == 'edit') { $value = $product->calories; } else { $value = 0; } @endphp
+			@include('components.numberpicker', array(
+				'id' => 'calories',
+				'label' => 'Energy (kcal)',
+				'min' => 0,
+				'step' => 1,
+				'value' => $value,
+				'invalidFeedback' => $__t('The amount cannot be lower than %s', '0'),
+				'hint' => $__t('Per stock quantity unit'),
+				'isRequired' => false
+			))
 			@endif
 
 			<div class="form-group">
@@ -198,14 +237,67 @@
 	</div>
 
 	<div class="col-lg-6 col-xs-12">
-		<label class="mt-2">{{ $__t('Picture') }}</label>
-		<button id="delete-current-product-picture-button" class="btn btn-sm btn-danger @if(empty($product->picture_file_name)) disabled @endif"><i class="fas fa-trash"></i> {{ $__t('Delete') }}</button>
-		@if(!empty($product->picture_file_name))
-			<p><img id="current-product-picture" src="{{ $U('/api/files/productpictures/' . base64_encode($product->picture_file_name)) }}" class="img-fluid img-thumbnail mt-2"></p>
-			<p id="delete-current-product-picture-on-save-hint" class="form-text text-muted font-italic d-none">{{ $__t('The current picture will be deleted when you save the product') }}</p>
-		@else
-			<p id="no-current-product-picture-hint" class="form-text text-muted font-italic">{{ $__t('No picture available') }}</p>
-		@endif
+		<h2>
+			{{ $__t('QU conversions') }}
+			<a id="qu-conversion-add-button" class="btn btn-outline-dark" href="#">
+				<i class="fas fa-plus"></i> {{ $__t('Add') }}
+			</a>
+		</h2>
+		<h5 id="qu-conversion-headline-info" class="text-muted font-italic"></h5>
+		<table id="qu-conversions-table" class="table table-sm table-striped dt-responsive">
+			<thead>
+				<tr>
+					<th class="border-right"></th>
+					<th>{{ $__t('Factor') }}</th>
+					<th>{{ $__t('Unit') }}</th>
+					<th class="d-none">Hidden group</th>
+					<th class="d-none">Hidden from_qu_id</th>
+				</tr>
+			</thead>
+			<tbody class="d-none">
+				@if($mode == "edit")
+				@foreach($quConversions as $quConversion)
+				<tr>
+					<td class="fit-content border-right">
+						<a class="btn btn-sm btn-info qu-conversion-edit-button @if($quConversion->product_id == null) disabled @endif" href="#" data-qu-conversion-id="{{ $quConversion->id }}">
+							<i class="fas fa-edit"></i>
+						</a>
+						<a class="btn btn-sm btn-danger qu-conversion-delete-button @if($quConversion->product_id == null) disabled @endif" href="#" data-qu-conversion-id="{{ $quConversion->id }}">
+							<i class="fas fa-trash"></i>
+						</a>
+					</td>
+					<td>
+						{{ $quConversion->factor }}
+					</td>
+					<td>
+						{{ FindObjectInArrayByPropertyValue($quantityunits, 'id', $quConversion->to_qu_id)->name }}
+					</td>
+					<td class="d-none">
+						@if($quConversion->product_id != null)
+						{{ $__t('Product overrides') }}
+						@else
+						{{ $__t('Default conversions') }}
+						@endif
+					</td>
+					<td class="d-none">
+						from_qu_id xx{{ $quConversion->from_qu_id }}xx
+					</td>
+				</tr>
+				@endforeach
+				@endif
+			</tbody>
+		</table>
+
+		<div class="pt-5">
+			<label class="mt-2">{{ $__t('Picture') }}</label>
+			<button id="delete-current-product-picture-button" class="btn btn-sm btn-danger @if(empty($product->picture_file_name)) disabled @endif"><i class="fas fa-trash"></i> {{ $__t('Delete') }}</button>
+			@if(!empty($product->picture_file_name))
+				<p><img id="current-product-picture" data-src="{{ $U('/api/files/productpictures/' . base64_encode($product->picture_file_name) . '?force_serve_as=picture&best_fit_width=400') }}" class="img-fluid img-thumbnail mt-2 lazy"></p>
+				<p id="delete-current-product-picture-on-save-hint" class="form-text text-muted font-italic d-none">{{ $__t('The current picture will be deleted when you save the product') }}</p>
+			@else
+				<p id="no-current-product-picture-hint" class="form-text text-muted font-italic">{{ $__t('No picture available') }}</p>
+			@endif
+		</div>
 	</div>
 </div>
 @stop

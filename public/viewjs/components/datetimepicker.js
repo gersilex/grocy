@@ -22,6 +22,8 @@ Grocy.Components.DateTimePicker.SetValue = function(value)
 	{
 		$("#datetimepicker-shortcut").click();
 	}
+
+	Grocy.Components.DateTimePicker.GetInputElement().keyup();
 }
 
 Grocy.Components.DateTimePicker.Clear = function()
@@ -84,7 +86,7 @@ Grocy.Components.DateTimePicker.Init = function()
 			showToday: true,
 			showClose: true
 		},
-		calendarWeeks: true,
+		calendarWeeks: Grocy.CalendarShowWeekNumbers,
 		maxDate: limitDate,
 		locale: moment.locale(),
 		defaultDate: startDate,

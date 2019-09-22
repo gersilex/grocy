@@ -4,6 +4,10 @@
 	if (value)
 	{
 		$("body").addClass("night-mode");
+
+		// Force disable auto night mode when night mode is enabled
+		$("#auto-night-mode-enabled").prop("checked", false);
+		$("#auto-night-mode-enabled").trigger("change");
 	}
 	else
 	{
@@ -20,6 +24,13 @@ $("#auto-night-mode-enabled").on("change", function()
 	if (!value && !BoolVal(Grocy.UserSettings.night_mode_enabled))
 	{
 		$("body").removeClass("night-mode");
+	}
+
+	// Force disable night mode when auto night mode is enabled
+	if (value)
+	{
+		$("#night-mode-enabled").prop("checked", false);
+		$("#night-mode-enabled").trigger("change");
 	}
 });
 
@@ -45,18 +56,21 @@ $("#auto-night-mode-time-range-goes-over-midgnight").on("change", function()
 	CheckNightMode();
 });
 
-$("#night-mode-enabled").prop("checked", BoolVal(Grocy.UserSettings.night_mode_enabled));
-$("#auto-night-mode-enabled").prop("checked", BoolVal(Grocy.UserSettings.auto_night_mode_enabled));
-$("#auto-night-mode-time-range-goes-over-midgnight").prop("checked", BoolVal(Grocy.UserSettings.auto_night_mode_time_range_goes_over_midnight));
-$("#auto-night-mode-enabled").trigger("change");
-$("#auto-night-mode-time-range-from").val(Grocy.UserSettings.auto_night_mode_time_range_from);
-$("#auto-night-mode-time-range-from").trigger("keyup");
-$("#auto-night-mode-time-range-to").val(Grocy.UserSettings.auto_night_mode_time_range_to);
-$("#auto-night-mode-time-range-to").trigger("keyup");
+if (Grocy.UserId !== -1)
+{
+	$("#night-mode-enabled").prop("checked", BoolVal(Grocy.UserSettings.night_mode_enabled));
+	$("#auto-night-mode-enabled").prop("checked", BoolVal(Grocy.UserSettings.auto_night_mode_enabled));
+	$("#auto-night-mode-time-range-goes-over-midgnight").prop("checked", BoolVal(Grocy.UserSettings.auto_night_mode_time_range_goes_over_midnight));
+	$("#auto-night-mode-enabled").trigger("change");
+	$("#auto-night-mode-time-range-from").val(Grocy.UserSettings.auto_night_mode_time_range_from);
+	$("#auto-night-mode-time-range-from").trigger("keyup");
+	$("#auto-night-mode-time-range-to").val(Grocy.UserSettings.auto_night_mode_time_range_to);
+	$("#auto-night-mode-time-range-to").trigger("keyup");
+}
 
 function CheckNightMode()
 {
-	if (!BoolVal(Grocy.UserSettings.auto_night_mode_enabled))
+	if (Grocy.UserId === -1 || !BoolVal(Grocy.UserSettings.auto_night_mode_enabled))
 	{
 		return;
 	}
@@ -94,7 +108,10 @@ function CheckNightMode()
 		}		
 	}
 }
-CheckNightMode();
+if (Grocy.UserId !== -1)
+{
+	CheckNightMode();
+}
 
 if (Grocy.Mode === "production")
 {

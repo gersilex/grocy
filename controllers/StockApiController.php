@@ -100,6 +100,19 @@ class StockApiController extends BaseApiController
 		}
 	}
 
+	public function AddProductByBarcode(\Slim\Http\Request $request, \Slim\Http\Response $response, array $args)
+	{
+		try
+		{
+			$args['productId'] = $this->StockService->GetProductIdFromBarcode($args['barcode']);
+			return $this->AddProduct($request, $response, $args);
+		}
+		catch (\Exception $ex)
+		{
+			return $this->GenericErrorResponse($response, $ex->getMessage());
+		}
+	}
+
 	public function ConsumeProduct(\Slim\Http\Request $request, \Slim\Http\Response $response, array $args)
 	{
 		$requestBody = $request->getParsedBody();
@@ -142,6 +155,19 @@ class StockApiController extends BaseApiController
 
 			$bookingId = $this->StockService->ConsumeProduct($args['productId'], $requestBody['amount'], $spoiled, $transactionType, $specificStockEntryId, $recipeId);
 			return $this->ApiResponse($this->Database->stock_log($bookingId));
+		}
+		catch (\Exception $ex)
+		{
+			return $this->GenericErrorResponse($response, $ex->getMessage());
+		}
+	}
+
+	public function ConsumeProductByBarcode(\Slim\Http\Request $request, \Slim\Http\Response $response, array $args)
+	{
+		try
+		{
+			$args['productId'] = $this->StockService->GetProductIdFromBarcode($args['barcode']);
+			return $this->ConsumeProduct($request, $response, $args);
 		}
 		catch (\Exception $ex)
 		{
@@ -192,6 +218,19 @@ class StockApiController extends BaseApiController
 		}
 	}
 
+	public function InventoryProductByBarcode(\Slim\Http\Request $request, \Slim\Http\Response $response, array $args)
+	{
+		try
+		{
+			$args['productId'] = $this->StockService->GetProductIdFromBarcode($args['barcode']);
+			return $this->InventoryProduct($request, $response, $args);
+		}
+		catch (\Exception $ex)
+		{
+			return $this->GenericErrorResponse($response, $ex->getMessage());
+		}
+	}
+
 	public function OpenProduct(\Slim\Http\Request $request, \Slim\Http\Response $response, array $args)
 	{
 		$requestBody = $request->getParsedBody();
@@ -216,6 +255,19 @@ class StockApiController extends BaseApiController
 
 			$bookingId = $this->StockService->OpenProduct($args['productId'], $requestBody['amount'], $specificStockEntryId);
 			return $this->ApiResponse($this->Database->stock_log($bookingId));
+		}
+		catch (\Exception $ex)
+		{
+			return $this->GenericErrorResponse($response, $ex->getMessage());
+		}
+	}
+
+	public function OpenProductByBarcode(\Slim\Http\Request $request, \Slim\Http\Response $response, array $args)
+	{
+		try
+		{
+			$args['productId'] = $this->StockService->GetProductIdFromBarcode($args['barcode']);
+			return $this->OpenProduct($request, $response, $args);
 		}
 		catch (\Exception $ex)
 		{
@@ -395,5 +447,24 @@ class StockApiController extends BaseApiController
 	public function ProductStockEntries(\Slim\Http\Request $request, \Slim\Http\Response $response, array $args)
 	{
 		return $this->ApiResponse($this->StockService->GetProductStockEntries($args['productId']));
+	}
+
+	public function StockBooking(\Slim\Http\Request $request, \Slim\Http\Response $response, array $args)
+	{
+		try
+		{
+			$stockLogRow = $this->Database->stock_log($args['bookingId']);
+
+			if ($stockLogRow === null)
+			{
+				throw new \Exception('Stock booking does not exist');
+			}
+			
+			return $this->ApiResponse($stockLogRow);
+		}
+		catch (\Exception $ex)
+		{
+			return $this->GenericErrorResponse($response, $ex->getMessage());
+		}
 	}
 }

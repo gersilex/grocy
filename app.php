@@ -38,7 +38,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 // Load config files
 require_once GROCY_DATAPATH . '/config.php';
-require_once __DIR__ . '/config-dist.php'; //For not in own config defined values we use the default ones
+require_once __DIR__ . '/config-dist.php'; // For not in own config defined values we use the default ones
 
 // Definitions for disabled authentication mode
 if (GROCY_DISABLE_AUTH === true)

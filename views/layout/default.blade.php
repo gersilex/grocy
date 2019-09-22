@@ -35,6 +35,7 @@
 	<link href="{{ $U('/node_modules/toastr/build/toastr.min.css?v=', true) }}{{ $version }}" rel="stylesheet">	
 	<link href="{{ $U('/node_modules/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css?v=', true) }}{{ $version }}" rel="stylesheet">
 	<link href="{{ $U('/node_modules/summernote/dist/summernote-bs4.css?v=', true) }}{{ $version }}" rel="stylesheet">
+	<link href="{{ $U('/node_modules/bootstrap-select/dist/css/bootstrap-select.min.css?v=', true) }}{{ $version }}" rel="stylesheet">
 	<link href="{{ $U('/components_unmanaged/noto-sans-v6-latin/noto-sans-v6-latin.css?v=', true) }}{{ $version }}" rel="stylesheet">
 	<link href="{{ $U('/css/grocy.css?v=', true) }}{{ $version }}" rel="stylesheet">
 	<link href="{{ $U('/css/grocy_night_mode.css?v=', true) }}{{ $version }}" rel="stylesheet">
@@ -54,9 +55,17 @@
 		Grocy.Culture = '{{ GROCY_CULTURE }}';
 		Grocy.Currency = '{{ GROCY_CURRENCY }}';
 		Grocy.CalendarFirstDayOfWeek = '{{ GROCY_CALENDAR_FIRST_DAY_OF_WEEK }}';
+		Grocy.CalendarShowWeekNumbers = {{ BoolToString(GROCY_CALENDAR_SHOW_WEEK_OF_YEAR) }};
 		Grocy.GettextPo = {!! $GettextPo !!};
-		Grocy.UserSettings = {!! json_encode($userSettings) !!};
 		Grocy.FeatureFlags = {!! json_encode($featureFlags) !!};
+
+		@if (GROCY_AUTHENTICATED)
+		Grocy.UserSettings = {!! json_encode($userSettings) !!};
+		Grocy.UserId = {{ GROCY_USER_ID }};
+		@else
+		Grocy.UserSettings = { };
+		Grocy.UserId = -1;
+		@endif
 	</script>
 </head>
 
@@ -74,6 +83,7 @@
 			<span class="navbar-toggler-icon"></span>
 		</button>
 
+		@if(GROCY_AUTHENTICATED)
 		<div id="sidebarResponsive" class="collapse navbar-collapse">
 			<ul class="navbar-nav navbar-sidenav pt-2">
 
@@ -184,6 +194,17 @@
 					</a>
 				</li>
 				@endif
+
+				@php $firstUserentity = true; @endphp
+				@foreach($userentitiesForSidebar as $userentity)
+				<li class="nav-item @if($firstUserentity) mt-4 @endif" data-toggle="tooltip" data-placement="right" title="{{ $userentity->caption }}" data-nav-for-page="userentity-{{ $userentity->name }}">
+					<a class="nav-link discrete-link" href="{{ $U('/userobjects/' . $userentity->name) }}">
+						<i class="{{ $userentity->icon_css_class }}"></i>
+						<span class="nav-link-text">{{ $userentity->caption }}</span>
+					</a>
+				</li>
+				@php if ($firstUserentity) { $firstUserentity = false; } @endphp
+				@endforeach
 				
 				<li class="nav-item mt-4" data-toggle="tooltip" data-placement="right" title="{{ $__t('Manage master data') }}">
 					<a class="nav-link nav-link-collapse collapsed discrete-link" data-toggle="collapse" href="#top-nav-manager-master-data">
@@ -198,12 +219,14 @@
 								<span class="nav-link-text">{{ $__t('Products') }}</span>
 							</a>
 						</li>
+						@if(GROCY_FEATURE_FLAG_STOCK_LOCATION_TRACKING)
 						<li data-nav-for-page="locations" data-sub-menu-of="#top-nav-manager-master-data">
 							<a class="nav-link discrete-link" href="{{ $U('/locations') }}">
 								<i class="fas fa-map-marker-alt"></i>
 								<span class="nav-link-text">{{ $__t('Locations') }}</span>
 							</a>
 						</li>
+						@endif
 						<li data-nav-for-page="quantityunits" data-sub-menu-of="#top-nav-manager-master-data">
 							<a class="nav-link discrete-link" href="{{ $U('/quantityunits') }}">
 								<i class="fas fa-balance-scale"></i>
@@ -245,6 +268,12 @@
 							<a class="nav-link discrete-link" href="{{ $U('/userfields') }}">
 								<i class="fas fa-bookmark "></i>
 								<span class="nav-link-text">{{ $__t('Userfields') }}</span>
+							</a>
+						</li>
+						<li data-nav-for-page="userentities" data-sub-menu-of="#top-nav-manager-master-data">
+							<a class="nav-link discrete-link" href="{{ $U('/userentities') }}">
+								<i class="fas fa-bookmark "></i>
+								<span class="nav-link-text">{{ $__t('Userentities') }}</span>
 							</a>
 						</li>
 					</ul>
@@ -348,14 +377,14 @@
 					</div>
 				</li>
 			</ul>
-		</div>
+		</div>@endif
 	</nav>
 	@endif
 
 	<div class="content-wrapper">
 		<div class="container-fluid">
 			<div class="row mb-3">
-				<div class="col content-text">
+				<div id="page-content" class="col content-text">
 					@yield('content')
 				</div>
 			</div>
@@ -386,6 +415,9 @@
 	<script src="{{ $U('/node_modules/gettext-translator/src/translator.js?v=', true) }}{{ $version }}"></script>
 	<script src="{{ $U('/node_modules/summernote/dist/summernote-bs4.js?v=', true) }}{{ $version }}"></script>
 	@if(!empty($__t('summernote_locale') && $__t('summernote_locale') != 'x'))<script src="{{ $U('/node_modules', true) }}/summernote/dist/lang/summernote-{{ $__t('summernote_locale') }}.js?v={{ $version }}"></script>@endif
+	<script src="{{ $U('/node_modules/bootstrap-select/dist/js/bootstrap-select.min.js?v=', true) }}{{ $version }}"></script>
+	@if(!empty($__t('bootstrap-select_locale') && $__t('bootstrap-select_locale') != 'x'))<script src="{{ $U('/node_modules', true) }}/bootstrap-select/dist/js/i18n/defaults-{{ $__t('bootstrap-select_locale') }}.js?v={{ $version }}"></script>@endif
+	<script src="{{ $U('/node_modules/jquery-lazy/jquery.lazy.min.js?v=', true) }}{{ $version }}"></script>
 
 	<script src="{{ $U('/js/extensions.js?v=', true) }}{{ $version }}"></script>
 	<script src="{{ $U('/js/grocy.js?v=', true) }}{{ $version }}"></script>

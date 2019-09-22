@@ -5,6 +5,11 @@
 @section('viewJsName', 'recipes')
 
 @section('content')
+<script>
+	Grocy.QuantityUnits = {!! json_encode($quantityUnits) !!};
+	Grocy.QuantityUnitConversionsResolved = {!! json_encode($quantityUnitConversionsResolved) !!};
+</script>
+
 <div class="row">
 	
 	<div class="col-xs-12 col-md-6 pb-3">
@@ -52,6 +57,7 @@
 							<th>{{ $__t('Requirements fulfilled') }}</th>
 							<th class="d-none">Hidden status for sorting of "Requirements fulfilled" column</th>
 							<th class="d-none">Hidden status for filtering by status</th>
+							<th class="d-none">Hidden recipe ingredient product names</th>
 
 							@include('components.userfields_thead', array(
 								'userfields' => $userfields
@@ -78,6 +84,11 @@
 							<td class="d-none">
 								@if(FindObjectInArrayByPropertyValue($recipesResolved, 'recipe_id', $recipe->id)->need_fulfilled == 1) enoughtinstock @elseif(FindObjectInArrayByPropertyValue($recipesResolved, 'recipe_id', $recipe->id)->need_fulfilled_with_shopping_list == 1) enoughinstockwithshoppinglist @else notenoughinstock @endif
 							</td>
+							<td class="d-none">
+								@foreach(FindAllObjectsInArrayByPropertyValue($recipePositionsResolved, 'recipe_id', $recipe->id) as $recipePos)
+									{{ FindObjectInArrayByPropertyValue($products, 'id', $recipePos->product_id)->name . ' ' }}
+								@endforeach
+							</td>
 
 							@include('components.userfields_tbody', array(
 								'userfields' => $userfields,
@@ -97,7 +108,7 @@
 						<a class="discrete-link recipe-gallery-item" data-recipe-id="{{ $recipe->id }}" href="#">
 							<div id="recipe-card-{{ $recipe->id }}" class="card border-white mb-0 recipe-card">
 								@if(!empty($recipe->picture_file_name))
-								<img src="{{ $U('/api/files/recipepictures/' . base64_encode($recipe->picture_file_name)) }}" class="img-fluid">
+								<img data-src="{{ $U('/api/files/recipepictures/' . base64_encode($recipe->picture_file_name) . '?force_serve_as=picture&best_fit_width=400') }}" class="img-fluid lazy">
 								@endif
 								<div class="card-body text-center">
 									<h5 class="card-title mb-1">{{ $recipe->name }}</h5>
@@ -140,7 +151,7 @@
 
 			<div class="card-body mb-0 pb-0">
 				<div class="row">
-					<div class="col-5">
+					<div class="col-4">
 						@include('components.numberpicker', array(
 							'id' => 'servings-scale',
 							'label' => 'Servings',
@@ -150,14 +161,24 @@
 							'additionalAttributes' => 'data-recipe-id="' . $selectedRecipe->id . '"'
 						))
 					</div>
-					<div class="col-7">
+					@if(!empty($selectedRecipeTotalCalories) && intval($selectedRecipeTotalCalories) > 0)
+					<div class="col-2">
+						<label>{{ $__t('Energy (kcal)') }}</label>
+						<p class="mb-0">
+							<h3 class="locale-number-format pt-0" data-format="generic">{{ $selectedRecipeTotalCalories }}</h3>
+						</p>
+					</div>
+					@endif
+					@if(GROCY_FEATURE_FLAG_STOCK_PRICE_TRACKING)
+					<div class="col-6">
 						<label>{{ $__t('Costs') }}&nbsp;&nbsp;
 							<span class="small text-muted">{{ $__t('Based on the prices of the last purchase per product') }}</span>
 						</label>
-						<p class="font-weight-bold font-italic">
-							<span class="locale-number-format" data-format="currency">{{ $selectedRecipeTotalCosts }}</span>
+						<p class="mb-0">
+							<h3 class="locale-number-format pt-0" data-format="currency">{{ $selectedRecipeTotalCosts }}</h3>
 						</p>
 					</div>
+					@endif
 				</div>
 			</div>
 
@@ -168,7 +189,7 @@
 				</div>
 
 				@if(!empty($selectedRecipeSubRecipe->picture_file_name))
-					<p class="w-75 mx-auto"><img src="{{ $U('/api/files/recipepictures/' . base64_encode($selectedRecipeSubRecipe->picture_file_name)) }}" class="img-fluid img-thumbnail"></p>
+					<p class="w-75 mx-auto txt-center"><img src="{{ $U('/api/files/recipepictures/' . base64_encode($selectedRecipeSubRecipe->picture_file_name) . '?force_serve_as=picture&best_fit_width=400') }}" class="img-fluid img-thumbnail lazy"></p>
 				@endif
 
 				@php $selectedRecipeSubRecipePositionsFiltered = FindAllObjectsInArrayByPropertyValue($selectedRecipeSubRecipesPositions, 'child_recipe_id', $selectedRecipeSubRecipe->id); @endphp
@@ -183,12 +204,22 @@
 						<h5 class="mb-2 mt-2 ml-4"><strong>{{ $selectedRecipePosition->ingredient_group }}</strong></h5>
 					@endif
 					<li class="list-group-item">
+						@php
+							$product = FindObjectInArrayByPropertyValue($products, 'id', $selectedRecipePosition->product_id);
+							$productQuConversions = FindAllObjectsInArrayByPropertyValue($quantityUnitConversionsResolved, 'product_id', $product->id);
+							$productQuConversions = FindAllObjectsInArrayByPropertyValue($productQuConversions, 'from_qu_id', $product->qu_id_stock);
+							$productQuConversion = FindObjectInArrayByPropertyValue($productQuConversions, 'to_qu_id', $selectedRecipePosition->qu_id);
+							if ($productQuConversion)
+							{
+								$selectedRecipePosition->recipe_amount = $selectedRecipePosition->recipe_amount * $productQuConversion->factor;
+							}
+						@endphp
 						@if(!empty($selectedRecipePosition->recipe_variable_amount))
 							{{ $selectedRecipePosition->recipe_variable_amount }}
 						@else
 							<span class="locale-number-format" data-format="quantity-amount">@if($selectedRecipePosition->recipe_amount == round($selectedRecipePosition->recipe_amount, 2)){{ round($selectedRecipePosition->recipe_amount, 2) }}@else{{ $selectedRecipePosition->recipe_amount }}@endif</span>
 						@endif
-						{{ $__n($selectedRecipePosition->recipe_amount, FindObjectInArrayByPropertyValue($quantityunits, 'id', $selectedRecipePosition->qu_id)->name, FindObjectInArrayByPropertyValue($quantityunits, 'id', $selectedRecipePosition->qu_id)->name_plural) }} {{ FindObjectInArrayByPropertyValue($products, 'id', $selectedRecipePosition->product_id)->name }}
+						{{ $__n($selectedRecipePosition->recipe_amount, FindObjectInArrayByPropertyValue($quantityUnits, 'id', $selectedRecipePosition->qu_id)->name, FindObjectInArrayByPropertyValue($quantityUnits, 'id', $selectedRecipePosition->qu_id)->name_plural) }} {{ FindObjectInArrayByPropertyValue($products, 'id', $selectedRecipePosition->product_id)->name }}
 						@if($selectedRecipePosition->need_fulfilled == 1)<i class="fas fa-check text-success"></i>@elseif($selectedRecipePosition->need_fulfilled_with_shopping_list == 1)<i class="fas fa-exclamation text-warning"></i>@else<i class="fas fa-times text-danger"></i>@endif
 						<span class="timeago-contextual">@if(FindObjectInArrayByPropertyValue($selectedRecipeSubRecipesPositions, 'recipe_pos_id', $selectedRecipePosition->id)->need_fulfilled == 1) {{ $__t('Enough in stock') }} @else {{ $__t('Not enough in stock, %1$s missing, %2$s already on shopping list', round(FindObjectInArrayByPropertyValue($selectedRecipeSubRecipesPositions, 'recipe_pos_id', $selectedRecipePosition->id)->missing_amount, 2), round(FindObjectInArrayByPropertyValue($selectedRecipeSubRecipesPositions, 'recipe_pos_id', $selectedRecipePosition->id)->amount_on_shopping_list, 2)) }} @endif</span>
 
@@ -210,7 +241,7 @@
 
 			<!-- Selected recipe -->
 			@if(!empty($selectedRecipe->picture_file_name))
-				<p class="w-75 mx-auto"><img src="{{ $U('/api/files/recipepictures/' . base64_encode($selectedRecipe->picture_file_name)) }}" class="img-fluid img-thumbnail"></p>
+				<p class="w-75 mx-auto text-center"><img src="{{ $U('/api/files/recipepictures/' . base64_encode($selectedRecipe->picture_file_name) . '?force_serve_as=picture&best_fit_width=400') }}" class="img-fluid img-thumbnail lazy"></p>
 			@endif
 
 			@if($selectedRecipePositionsResolved->count() > 0)
@@ -224,12 +255,22 @@
 					<h5 class="mb-2 mt-2 ml-4"><strong>{{ $selectedRecipePosition->ingredient_group }}</strong></h5>
 				@endif
 				<li class="list-group-item">
+					@php
+						$product = FindObjectInArrayByPropertyValue($products, 'id', $selectedRecipePosition->product_id);
+						$productQuConversions = FindAllObjectsInArrayByPropertyValue($quantityUnitConversionsResolved, 'product_id', $product->id);
+						$productQuConversions = FindAllObjectsInArrayByPropertyValue($productQuConversions, 'from_qu_id', $product->qu_id_stock);
+						$productQuConversion = FindObjectInArrayByPropertyValue($productQuConversions, 'to_qu_id', $selectedRecipePosition->qu_id);
+						if ($productQuConversion)
+						{
+							$selectedRecipePosition->recipe_amount = $selectedRecipePosition->recipe_amount * $productQuConversion->factor;
+						}
+					@endphp
 					@if(!empty($selectedRecipePosition->recipe_variable_amount))
 						{{ $selectedRecipePosition->recipe_variable_amount }}
 					@else
 						<span class="locale-number-format" data-format="quantity-amount">@if($selectedRecipePosition->recipe_amount == round($selectedRecipePosition->recipe_amount, 2)){{ round($selectedRecipePosition->recipe_amount, 2) }}@else{{ $selectedRecipePosition->recipe_amount }}@endif</span>
 					@endif
-					{{ $__n($selectedRecipePosition->recipe_amount, FindObjectInArrayByPropertyValue($quantityunits, 'id', $selectedRecipePosition->qu_id)->name, FindObjectInArrayByPropertyValue($quantityunits, 'id', $selectedRecipePosition->qu_id)->name_plural) }} {{ FindObjectInArrayByPropertyValue($products, 'id', $selectedRecipePosition->product_id)->name }}
+					{{ $__n($selectedRecipePosition->recipe_amount, FindObjectInArrayByPropertyValue($quantityUnits, 'id', $selectedRecipePosition->qu_id)->name, FindObjectInArrayByPropertyValue($quantityUnits, 'id', $selectedRecipePosition->qu_id)->name_plural) }} {{ FindObjectInArrayByPropertyValue($products, 'id', $selectedRecipePosition->product_id)->name }}
 					@if($selectedRecipePosition->need_fulfilled == 1)<i class="fas fa-check text-success"></i>@elseif($selectedRecipePosition->need_fulfilled_with_shopping_list == 1)<i class="fas fa-exclamation text-warning"></i>@else<i class="fas fa-times text-danger"></i>@endif
 					<span class="timeago-contextual">@if(FindObjectInArrayByPropertyValue($recipePositionsResolved, 'recipe_pos_id', $selectedRecipePosition->id)->need_fulfilled == 1) {{ $__t('Enough in stock') }} @else {{ $__t('Not enough in stock, %1$s missing, %2$s already on shopping list', round(FindObjectInArrayByPropertyValue($recipePositionsResolved, 'recipe_pos_id', $selectedRecipePosition->id)->missing_amount, 2), round(FindObjectInArrayByPropertyValue($recipePositionsResolved, 'recipe_pos_id', $selectedRecipePosition->id)->amount_on_shopping_list, 2)) }} @endif</span>
 

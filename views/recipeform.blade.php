@@ -22,7 +22,11 @@
 	<div class="col">
 		<h1>@yield('title')</h1>
 
-		<script>Grocy.EditMode = '{{ $mode }}';</script>
+		<script>
+			Grocy.EditMode = '{{ $mode }}';
+			Grocy.QuantityUnits = {!! json_encode($quantityunits) !!};
+			Grocy.QuantityUnitConversionsResolved = {!! json_encode($quantityUnitConversionsResolved) !!};
+		</script>
 
 		@if($mode == 'edit')
 			<script>Grocy.EditObjectId = {{ $recipe->id }};</script>
@@ -125,6 +129,16 @@
 								{{ FindObjectInArrayByPropertyValue($products, 'id', $recipePosition->product_id)->name }}
 							</td>
 							<td>
+								@php
+									$product = FindObjectInArrayByPropertyValue($products, 'id', $recipePosition->product_id);
+									$productQuConversions = FindAllObjectsInArrayByPropertyValue($quantityUnitConversionsResolved, 'product_id', $product->id);
+									$productQuConversions = FindAllObjectsInArrayByPropertyValue($productQuConversions, 'from_qu_id', $product->qu_id_stock);
+									$productQuConversion = FindObjectInArrayByPropertyValue($productQuConversions, 'to_qu_id', $recipePosition->qu_id);
+									if ($productQuConversion)
+									{
+										$recipePosition->amount = $recipePosition->amount * $productQuConversion->factor;
+									}
+								@endphp
 								@if(!empty($recipePosition->variable_amount))
 									{{ $recipePosition->variable_amount }}
 								@else
@@ -195,7 +209,7 @@
 				<label class="mt-2">{{ $__t('Picture') }}</label>
 				<button id="delete-current-recipe-picture-button" class="btn btn-sm btn-danger @if(empty($recipe->picture_file_name)) disabled @endif"><i class="fas fa-trash"></i> {{ $__t('Delete') }}</button>
 				@if(!empty($recipe->picture_file_name))
-					<p><img id="current-recipe-picture" src="{{ $U('/api/files/recipepictures/' . base64_encode($recipe->picture_file_name)) }}" class="img-fluid img-thumbnail mt-2"></p>
+					<p><img id="current-recipe-picture" data-src="{{ $U('/api/files/recipepictures/' . base64_encode($recipe->picture_file_name) . '?force_serve_as=picture&best_fit_width=400') }}" class="img-fluid img-thumbnail mt-2 lazy"></p>
 					<p id="delete-current-recipe-picture-on-save-hint" class="form-text text-muted font-italic d-none">{{ $__t('The current picture will be deleted when you save the recipe') }}</p>
 				@else
 					<p id="no-current-recipe-picture-hint" class="form-text text-muted font-italic">{{ $__t('No picture available') }}</p>

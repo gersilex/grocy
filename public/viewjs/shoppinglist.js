@@ -6,7 +6,7 @@
 		{ 'orderable': false, 'targets': 0 },
 		{ 'visible': false, 'targets': 3 }
 	],
-	'language': JSON.parse(__t('datatables_localization')),
+	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
 	'scrollY': false,
 	'colReorder': true,
 	'stateSave': true,
@@ -246,10 +246,6 @@ $(window).on("message", function(e)
 			}
 		}
 	}
-	else if (data.Message === "ShowSuccessMessage")
-	{
-		toastr.success(data.Payload);
-	}
 });
 
 $(document).on('click', '#shopping-list-stock-add-workflow-skip-button', function(e)
@@ -307,3 +303,32 @@ function OnListItemRemoved()
 	}
 }
 OnListItemRemoved();
+
+$(document).on("click", "#print-shopping-list-button", function(e)
+{
+	$(".print-timestamp").text(moment().format("l LT"));
+	$("#description-for-print").html($("#description").val());
+	window.print();
+});
+
+$("#description").on("summernote.change", function()
+{
+	$("#save-description-button").removeClass("disabled");
+});
+
+$(document).on("click", "#save-description-button", function(e)
+{
+	e.preventDefault();
+	document.activeElement.blur();
+
+	Grocy.Api.Put('objects/shopping_lists/' + $("#selected-shopping-list").val(), { description: $("#description").val() },
+		function(result)
+		{
+			$("#save-description-button").addClass("disabled");
+		},
+		function(xhr)
+		{
+			console.log(xhr);
+		}
+	);
+});

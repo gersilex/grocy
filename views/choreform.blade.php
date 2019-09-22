@@ -33,7 +33,7 @@
 			</div>
 
 			<div class="form-group">
-				<label for="period_type">{{ $__t('Period type') }}</label>
+				<label for="period_type">{{ $__t('Period type') }} <span id="chore-period-type-info" class="small text-muted"></span></label>
 				<select required class="form-control input-group-chore-period-type" id="period_type" name="period_type">
 					@foreach($periodTypes as $periodType)
 						<option @if($mode == 'edit' && $periodType == $chore->period_type) selected="selected" @endif value="{{ $periodType }}">{{ $__t($periodType) }}</option>
@@ -50,7 +50,6 @@
 				'min' => '0',
 				'additionalCssClasses' => 'input-group-chore-period-type',
 				'invalidFeedback' => $__t('This cannot be negative'),
-				'additionalHtmlElements' => '<span id="chore-period-type-info" class="small text-muted"></span>',
 				'additionalGroupCssClasses' => 'period-type-input period-type-dynamic-regular period-type-monthly'
 			))
 
@@ -88,6 +87,26 @@
 			<input type="hidden" id="period_config" name="period_config" value="@if($mode == 'edit'){{ $chore->period_config }}@endif">
 
 			<div class="form-group">
+				<label for="assignment_type">{{ $__t('Assignment type') }} <span id="chore-assignment-type-info" class="small text-muted"></span></label>
+				<select required class="form-control input-group-chore-assignment-type" id="assignment_type" name="assignment_type">
+					@foreach($assignmentTypes as $assignmentType)
+						<option @if($mode == 'edit' && $assignmentType == $chore->assignment_type) selected="selected" @endif value="{{ $assignmentType }}">{{ $__t($assignmentType) }}</option>
+					@endforeach
+				</select>
+				<div class="invalid-feedback">{{ $__t('An assignment type is required') }}</div>
+			</div>
+
+			<div class="form-group">
+				<label for="assignment_config">{{ $__t('Assign to') }}</label>
+				<select required multiple class="form-control input-group-chore-assignment-type selectpicker" id="assignment_config" name="assignment_config" data-actions-Box="true" data-live-search="true">
+					@foreach($users as $user)
+						<option @if($mode == 'edit' && in_array($user->id, explode(',', $chore->assignment_config))) selected="selected" @endif value="{{ $user->id }}">{{ $user->display_name }}</option>
+					@endforeach
+				</select>
+				<div class="invalid-feedback">{{ $__t('This assignment type requires that at least one is assigned') }}</div>
+			</div>
+
+			<div class="form-group">
 				<div class="form-check">
 					<input type="hidden" name="track_date_only" value="0">
 					<input @if($mode == 'edit' && $chore->track_date_only == 1) checked @endif class="form-check-input" type="checkbox" id="track_date_only" name="track_date_only" value="1">
@@ -106,6 +125,37 @@
 					</label>
 				</div>
 			</div>
+
+			@if(GROCY_FEATURE_FLAG_STOCK)
+			<div class="form-group mt-4 mb-1">
+				<div class="form-check">
+					<input type="hidden" name="consume_product_on_execution" value="0">
+					<input @if($mode == 'edit' && $chore->consume_product_on_execution == 1) checked @endif class="form-check-input" type="checkbox" id="consume_product_on_execution" name="consume_product_on_execution" value="1">
+					<label class="form-check-label" for="consume_product_on_execution">{{ $__t('Consume product on chore execution') }}</label>
+				</div>
+			</div>
+
+			@php $prefillById = ''; if($mode=='edit' && !empty($chore->product_id)) { $prefillById = $chore->product_id; } @endphp
+			@include('components.productpicker', array(
+				'products' => $products,
+				'nextInputSelector' => '#product_amount',
+				'isRequired' => false,
+				'disallowAllProductWorkflows' => true,
+				'prefillById' => $prefillById
+			))
+
+			@php if($mode == 'edit') { $value = $chore->product_amount; } else { $value = ''; } @endphp
+			@include('components.numberpicker', array(
+				'id' => 'product_amount',
+				'label' => 'Amount',
+				'hintId' => 'amount_qu_unit',
+				'min' => 0.0001,
+				'step' => 0.0001,
+				'invalidFeedback' => $__t('The amount cannot be lower than %s', '1'),
+				'isRequired' => false,
+				'value' => $value
+			))
+			@endif
 
 			@include('components.userfieldsform', array(
 				'userfields' => $userfields,

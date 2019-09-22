@@ -59,6 +59,11 @@ var calendar = $("#calendar").fullCalendar({
 	"eventRender": function(event, element)
 	{
 		var recipe = JSON.parse(event.recipe);
+		if (recipe === null || recipe === undefined)
+		{
+			return false;
+		}
+
 		var mealPlanEntry = JSON.parse(event.mealPlanEntry);
 		var resolvedRecipe = FindObjectInArrayByPropertyValue(recipesResolved, "recipe_id", recipe.id);
 
@@ -103,12 +108,13 @@ var calendar = $("#calendar").fullCalendar({
 		
 		if (recipe.picture_file_name && !recipe.picture_file_name.isEmpty())
 		{
-			element.html(element.html() + '<img src="' + U("/api/files/recipepictures/") + btoa(recipe.picture_file_name) + '" class="img-fluid">')
+			element.html(element.html() + '<img data-src="' + U("/api/files/recipepictures/") + btoa(recipe.picture_file_name) + '?force_serve_as=picture&best_fit_width=400" class="img-fluid lazy">')
 		}
 	},
 	"eventAfterAllRender": function(view)
 	{
 		RefreshLocaleNumberDisplay();
+		LoadImagesLazy();
 
 		if (GetUriParam("week") !== undefined)
 		{

@@ -301,12 +301,13 @@ RefreshContextualTimeago = function()
 		var timestamp = element.attr("datetime");
 
 		var isNever = timestamp && timestamp.substring(0, 10) == "2999-12-31";
-		var isToday = timestamp && timestamp.length == 10 && timestamp.substring(0, 10) == moment().format("YYYY-MM-DD");
+		var isToday = timestamp && timestamp.substring(0, 10) == moment().format("YYYY-MM-DD");
 		var isDateWithoutTime = element.hasClass("timeago-date-only");
 
 		if (isNever)
 		{
 			element.prev().text(__t("Never"));
+			element.text("");
 		}
 		else if (isToday)
 		{
@@ -348,6 +349,11 @@ Grocy.FrontendHelpers = { };
 Grocy.FrontendHelpers.ValidateForm = function(formId)
 {
 	var form = document.getElementById(formId);
+	if (form === null || form === undefined)
+	{
+		return;
+	}
+
 	if (form.checkValidity() === true)
 	{
 		$(form).find(':submit').removeClass('disabled');
@@ -436,7 +442,10 @@ $(".user-setting-control").on("change", function()
 		},
 		function(xhr)
 		{
-			Grocy.FrontendHelpers.ShowGenericError('Error while saving, probably this item already exists', xhr.response)
+			if (!xhr.statusText.isEmpty())
+			{
+				Grocy.FrontendHelpers.ShowGenericError('Error while saving, probably this item already exists', xhr.response)
+			}
 		}
 	);
 });
@@ -514,6 +523,11 @@ function RefreshLocaleNumberDisplay()
 	{
 		$(this).text(parseFloat($(this).text()).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 3 }));
 	});
+
+	$(".locale-number-format[data-format='generic']").each(function ()
+	{
+		$(this).text(parseFloat($(this).text()).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }));
+	});
 }
 RefreshLocaleNumberDisplay();
 
@@ -525,4 +539,36 @@ $(document).on("click", ".easy-link-copy-textbox", function()
 $("textarea.wysiwyg-editor").summernote({
 	minHeight: "300px",
 	lang: __t("summernote_locale")
+});
+
+function LoadImagesLazy()
+{
+	$(".lazy").Lazy({
+		enableThrottle: true,
+		throttle: 500
+	});
+}
+LoadImagesLazy();
+
+if (!Grocy.CalendarFirstDayOfWeek.isEmpty())
+{
+	moment.updateLocale(moment.locale(), {
+		week: {
+			dow: Grocy.CalendarFirstDayOfWeek
+		}
+	});
+}
+
+$(window).on("message", function(e)
+{
+	var data = e.originalEvent.data;
+
+	if (data.Message === "ShowSuccessMessage")
+	{
+		toastr.success(data.Payload);
+	}
+	else if (data.Message === "CloseAllModals")
+	{
+		bootbox.hideAll();
+	}
 });

@@ -11,10 +11,16 @@ class StockService extends BaseService
 
 	public function GetCurrentStock($includeNotInStockButMissingProducts = false)
 	{
-		$sql = 'SELECT * FROM stock_current';
+		$missingProductsView = 'stock_missing_products_including_opened';
+		if (!GROCY_FEATURE_SETTING_STOCK_COUNT_OPENED_PRODUCTS_AGAINST_MINIMUM_STOCK_AMOUNT)
+		{
+			$missingProductsView = 'stock_missing_products';
+		}
+
+		$sql = 'SELECT * FROM stock_current UNION SELECT id, 0, 0, null, 0, 0, 0 FROM ' . $missingProductsView . ' WHERE id NOT IN (SELECT product_id FROM stock_current)';
 		if ($includeNotInStockButMissingProducts)
 		{
-			$sql = 'SELECT * FROM stock_current WHERE best_before_date IS NOT NULL';
+			$sql = 'SELECT * FROM stock_current WHERE best_before_date IS NOT NULL UNION SELECT id, 0, 0, null, 0, 0, 0 FROM ' . $missingProductsView . ' WHERE id NOT IN (SELECT product_id FROM stock_current)';
 		}
 		
 		return $this->DatabaseService->ExecuteDbQuery($sql)->fetchAll(\PDO::FETCH_OBJ);
@@ -40,7 +46,12 @@ class StockService extends BaseService
 
 	public function GetMissingProducts()
 	{
-		$sql = 'SELECT * FROM stock_missing_products';
+		$sql = 'SELECT * FROM stock_missing_products_including_opened';
+		if (!GROCY_FEATURE_SETTING_STOCK_COUNT_OPENED_PRODUCTS_AGAINST_MINIMUM_STOCK_AMOUNT)
+		{
+			$sql = 'SELECT * FROM stock_missing_products';
+		}
+
 		return $this->DatabaseService->ExecuteDbQuery($sql)->fetchAll(\PDO::FETCH_OBJ);
 	}
 
@@ -76,13 +87,19 @@ class StockService extends BaseService
 			throw new \Exception('Product does not exist');
 		}
 
-		$product = $this->Database->products($productId);
-		$productStockAmount = $this->Database->stock()->where('product_id', $productId)->sum('amount');
-		if ($productStockAmount == null)
+		$stockCurrentRow = FindObjectinArrayByPropertyValue($this->GetCurrentStock(), 'product_id', $productId);
+
+		if ($stockCurrentRow == null)
 		{
-			$productStockAmount = 0;
+			$stockCurrentRow = new \stdClass();
+			$stockCurrentRow->amount = 0;
+			$stockCurrentRow->amount_opened = 0;
+			$stockCurrentRow->amount_aggregated = 0;
+			$stockCurrentRow->amount_opened_aggregated = 0;
+			$stockCurrentRow->is_aggregated_amount = 0;
 		}
-		$productStockAmountOpened = $this->Database->stock()->where('product_id = :1 AND open = 1', $productId)->sum('amount');
+
+		$product = $this->Database->products($productId);
 		$productLastPurchased = $this->Database->stock_log()->where('product_id', $productId)->where('transaction_type', self::TRANSACTION_TYPE_PURCHASE)->where('undone', 0)->max('purchased_date');
 		$productLastUsed = $this->Database->stock_log()->where('product_id', $productId)->where('transaction_type', self::TRANSACTION_TYPE_CONSUME)->where('undone', 0)->max('used_date');
 		$nextBestBeforeDate = $this->Database->stock()->where('product_id', $productId)->min('best_before_date');
@@ -98,7 +115,7 @@ class StockService extends BaseService
 			$lastPrice = $lastLogRow->price;
 		}
 
-		$consumeCount = $this->Database->stock_log()->where('product_id', $productId)->where('transaction_type', self::TRANSACTION_TYPE_CONSUME)->where('undone', 0)->sum('amount') * -1;
+		$consumeCount = $this->Database->stock_log()->where('product_id', $productId)->where('transaction_type', self::TRANSACTION_TYPE_CONSUME)->where('undone = 0 AND spoiled = 0')->sum('amount') * -1;
 		$consumeCountSpoiled = $this->Database->stock_log()->where('product_id', $productId)->where('transaction_type', self::TRANSACTION_TYPE_CONSUME)->where('undone = 0 AND spoiled = 1')->sum('amount') * -1;
 		if ($consumeCount == 0)
 		{
@@ -110,15 +127,18 @@ class StockService extends BaseService
 			'product' => $product,
 			'last_purchased' => $productLastPurchased,
 			'last_used' => $productLastUsed,
-			'stock_amount' => $productStockAmount,
-			'stock_amount_opened' => $productStockAmountOpened,
+			'stock_amount' => $stockCurrentRow->amount,
+			'stock_amount_opened' => $stockCurrentRow->amount_opened,
+			'stock_amount_aggregated' => $stockCurrentRow->amount_aggregated,
+			'stock_amount_opened_aggregated' => $stockCurrentRow->amount_opened_aggregated,
 			'quantity_unit_purchase' => $quPurchase,
 			'quantity_unit_stock' => $quStock,
 			'last_price' => $lastPrice,
 			'next_best_before_date' => $nextBestBeforeDate,
 			'location' => $location,
 			'average_shelf_life_days' => $averageShelfLifeDays,
-			'spoil_rate_percent' => $spoilRate
+			'spoil_rate_percent' => $spoilRate,
+			'is_aggregated_amount' => $stockCurrentRow->is_aggregated_amount
 		);
 	}
 
@@ -169,12 +189,12 @@ class StockService extends BaseService
 		$productDetails = (object)$this->GetProductDetails($productId);
 		if ($productDetails->product->enable_tare_weight_handling == 1)
 		{
-			if ($amount <= $productDetails->product->tare_weight + $productDetails->stock_amount)
+			if ($amount <= floatval($productDetails->product->tare_weight) + floatval($productDetails->stock_amount))
 			{
 				throw new \Exception('The amount cannot be lower or equal than the defined tare weight + current stock amount');
 			}
 			
-			$amount = $amount - $productDetails->stock_amount - $productDetails->product->tare_weight;
+			$amount = $amount - floatval($productDetails->stock_amount) - floatval($productDetails->product->tare_weight);
 		}
 		
 		//Sets the default best before date, if none is supplied
@@ -244,12 +264,12 @@ class StockService extends BaseService
 		$productDetails = (object)$this->GetProductDetails($productId);
 		if ($productDetails->product->enable_tare_weight_handling == 1)
 		{
-			if ($amount < $productDetails->product->tare_weight)
+			if ($amount < floatval($productDetails->product->tare_weight))
 			{
 				throw new \Exception('The amount cannot be lower than the defined tare weight');
 			}
 			
-			$amount = abs($amount - $productDetails->stock_amount - $productDetails->product->tare_weight);
+			$amount = abs($amount - floatval($productDetails->stock_amount) - floatval($productDetails->product->tare_weight));
 		}
 
 		if ($transactionType === self::TRANSACTION_TYPE_CONSUME || $transactionType === self::TRANSACTION_TYPE_INVENTORY_CORRECTION)
@@ -350,22 +370,22 @@ class StockService extends BaseService
 		$containerWeight = 0;
 		if ($productDetails->product->enable_tare_weight_handling == 1)
 		{
-			$containerWeight = $productDetails->product->tare_weight;
+			$containerWeight = floatval($productDetails->product->tare_weight);
 		}
 		
-		if ($newAmount == $productDetails->stock_amount + $containerWeight)
+		if ($newAmount == floatval($productDetails->stock_amount) + $containerWeight)
 		{
 			throw new \Exception('The new amount cannot equal the current stock amount');
 		}
-		else if ($newAmount > $productDetails->stock_amount + $containerWeight)
+		else if ($newAmount > floatval($productDetails->stock_amount) + $containerWeight)
 		{
-			$bookingAmount = $newAmount - $productDetails->stock_amount;
+			$bookingAmount = $newAmount - floatval($productDetails->stock_amount);
 			if ($productDetails->product->enable_tare_weight_handling == 1)
 			{
 				$bookingAmount = $newAmount;
 			}
 			
-			$this->AddProduct($productId, $bookingAmount, $bestBeforeDate, self::TRANSACTION_TYPE_INVENTORY_CORRECTION, date('Y-m-d'), $price, $locationId);
+			return $this->AddProduct($productId, $bookingAmount, $bestBeforeDate, self::TRANSACTION_TYPE_INVENTORY_CORRECTION, date('Y-m-d'), $price, $locationId);
 		}
 		else if ($newAmount < $productDetails->stock_amount + $containerWeight)
 		{
@@ -375,10 +395,10 @@ class StockService extends BaseService
 				$bookingAmount = $newAmount;
 			}
 
-			$this->ConsumeProduct($productId, $bookingAmount, false, self::TRANSACTION_TYPE_INVENTORY_CORRECTION);
+			return $this->ConsumeProduct($productId, $bookingAmount, false, self::TRANSACTION_TYPE_INVENTORY_CORRECTION);
 		}
 
-		return $this->Database->lastInsertId();
+		return null;
 	}
 
 	public function OpenProduct(int $productId, float $amount, $specificStockEntryId = 'default')

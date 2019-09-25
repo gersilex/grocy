@@ -58,6 +58,14 @@ a.discrete-link:focus {
 	left: 0;
 	overflow: auto;
  }
+ 
+ body.fullscreen-card {
+	 overflow: hidden;
+ }
+
+ .fullscreen-card .hide-on-fullscreen-card {
+	display: none;
+}
 
  .form-check-input.is-valid ~ .form-check-label,
  .was-validated .form-check-input:valid ~ .form-check-label {
@@ -277,6 +285,14 @@ input::-webkit-inner-spin-button {
 
 html {
 	min-height: inherit;
+}
+
+.dropdown-toggle::after {
+	margin-left: -0.15em !important;
+}
+
+#mainNav .navbar-collapse .navbar-sidenav > .nav-item > .nav-link {
+	padding-right: 1.25em !important;
 }
 
 /* Third party component customizations - Tempus Dominus */

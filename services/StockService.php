@@ -569,7 +569,7 @@ class StockService extends BaseService
 		}
 	}
 
-	public function AddProductToShoppingList($productId, $amount = 1, $listId = 1)
+	public function AddProductToShoppingList($productId, $amount = 1, $note = null, $listId = 1)
 	{
 		if (!$this->ShoppingListExists($listId))
 		{
@@ -586,15 +586,17 @@ class StockService extends BaseService
 		{
 			$alreadyExistingEntry->update(array(
 				'amount' => ($alreadyExistingEntry->amount + $amount),
-				'shopping_list_id' => $listId
+				'shopping_list_id' => $listId,
+				'note' => $note
 			));
 		}
 		else // Insert
 		{
 			$shoppinglistRow = $this->Database->shopping_list()->createRow(array(
-				'product_id' => $productId->id,
+				'product_id' => $productId,
 				'amount' => $amount,
-				'shopping_list_id' => $listId
+				'shopping_list_id' => $listId,
+				'note' => $note
 			));
 			$shoppinglistRow->save();
 		}

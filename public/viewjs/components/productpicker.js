@@ -134,7 +134,7 @@ $('#product_id_text_input').on('blur', function(e)
 	}
 
 	var input = $('#product_id_text_input').val().toString();
-	var possibleOptionElement = $("#product_id option[data-additional-searchdata*=\"" + input + "\"]").first();
+	var possibleOptionElement = $("#product_id option[data-additional-searchdata*=\"" + input + ",\"]").first();
 	
 	if (GetUriParam('addbarcodetoselection') === undefined && possibleOptionElement.length > 0)
 	{
@@ -169,6 +169,7 @@ $('#product_id_text_input').on('blur', function(e)
 				},
 				size: 'large',
 				backdrop: true,
+				closeButton: false,
 				buttons: {
 					cancel: {
 						label: __t('Cancel'),
@@ -243,3 +244,9 @@ $(document).on("Grocy.BarcodeScanned", function(e, barcode)
 		Grocy.Components.ProductPicker.GetInputElement().blur();
 	}, 200);
 });
+
+$(document).on("shown.bs.modal", function(e)
+{
+	$(".modal-footer").addClass("d-block").addClass("d-sm-flex");
+	$(".modal-footer").find("button").addClass("mt-2").addClass("mt-sm-0");
+})

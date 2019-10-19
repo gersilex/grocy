@@ -8,7 +8,7 @@ body {
 }
 
 .responsive-button {
-    white-space: normal;
+	white-space: normal;
 }
 
 .timeago-contextual {
@@ -50,7 +50,7 @@ a.discrete-link:focus {
 }
 
 .fullscreen {
-	z-index: 9999;
+	z-index: 8888;
 	width: 100%;
 	height: 100%;
 	position: fixed;
@@ -58,6 +58,20 @@ a.discrete-link:focus {
 	left: 0;
 	overflow: auto;
  }
+
+ /* Fixes smooth scrolling on iOS */
+#sidebarResponsive,
+.fullscreen {
+	-webkit-overflow-scrolling: touch;
+}
+
+.fullscreen-card .card-header {
+	z-index: 9999;
+	width: 100%;
+	position: fixed;
+	top: 0;
+	left: 0;
+}
  
  body.fullscreen-card {
 	 overflow: hidden;
@@ -69,7 +83,7 @@ a.discrete-link:focus {
 
  .form-check-input.is-valid ~ .form-check-label,
  .was-validated .form-check-input:valid ~ .form-check-label {
-    color: inherit;
+	color: inherit;
 }
 
 .text-strike-through {
@@ -177,27 +191,27 @@ input::-webkit-inner-spin-button {
 }
 
 .expandable-text .collapse, .module .collapsing {
-  height: 2.4rem;
+	height: 2.4rem;
 }
 
 .expandable-text .collapse {
-  position: relative;
-  display: block;
-  overflow: hidden;
+	position: relative;
+	display: block;
+	overflow: hidden;
 }
 
 .expandable-text .collapse:before {
-  position: absolute;
-  right: 0;
-  bottom: 0;
+	position: absolute;
+	right: 0;
+	bottom: 0;
 }
 
 .expandable-text .collapse.show {
-  height: auto;
+	height: auto;
 }
 
 .expandable-text .collapse.show:before {
-  display: none;
+	display: none;
 }
 
 /* Third party component customizations - Bootstrap */
@@ -224,6 +238,14 @@ input::-webkit-inner-spin-button {
 
 .text-larger {
 	font-size: 125%;
+}
+
+.input-group > .form-control:focus {
+	z-index: inherit;
+}
+
+.list-group {
+	flex-shrink: 0;
 }
 
 /* Third party component customizations - DataTables */
@@ -273,8 +295,8 @@ input::-webkit-inner-spin-button {
 /* Third party component customizations - SB Admin 2 */
 #mainNav .navbar-collapse .navbar-nav > .nav-item.dropdown > .nav-link:after,
 #mainNav .navbar-collapse .navbar-sidenav .nav-link-collapse:after {
-  font-family: 'Font Awesome 5 Free';
-  font-weight: 900;
+	font-family: 'Font Awesome 5 Free';
+	font-weight: 900;
 }
 
 @media (max-width:992px) {

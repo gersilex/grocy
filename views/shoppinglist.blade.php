@@ -16,6 +16,7 @@
 @endpush
 
 @section('content')
+@if(GROCY_FEATURE_FLAG_SHOPPINGLIST_MULTIPLE_LISTS)
 <div class="row border-bottom pb-2 mb-2 d-print-none">
 	<div class="col-xs-12 col-md-4">
 		<label for="selected-shopping-list">{{ $__t('Selected shopping list') }}</label>
@@ -44,6 +45,7 @@
 		</div>-->
 	</div>
 </div>
+@endif
 
 <div class="row d-print-none">
 	<div class="col">
@@ -123,7 +125,7 @@
 						@if(!empty($listItem->product_id)) {{ FindObjectInArrayByPropertyValue($products, 'id', $listItem->product_id)->name }}<br>@endif<em>{!! nl2br($listItem->note) !!}</em>
 					</td>
 					<td>
-						{{ $listItem->amount }} @if(!empty($listItem->product_id)){{ $__n($listItem->amount, FindObjectInArrayByPropertyValue($quantityunits, 'id', FindObjectInArrayByPropertyValue($products, 'id', $listItem->product_id)->qu_id_purchase)->name, FindObjectInArrayByPropertyValue($quantityunits, 'id', FindObjectInArrayByPropertyValue($products, 'id', $listItem->product_id)->qu_id_purchase)->name_plural) }}@endif
+						<span class="locale-number locale-number-quantity-amount">{{ $listItem->amount }}</span> @if(!empty($listItem->product_id)){{ $__n($listItem->amount, FindObjectInArrayByPropertyValue($quantityunits, 'id', FindObjectInArrayByPropertyValue($products, 'id', $listItem->product_id)->qu_id_purchase)->name, FindObjectInArrayByPropertyValue($quantityunits, 'id', FindObjectInArrayByPropertyValue($products, 'id', $listItem->product_id)->qu_id_purchase)->name_plural) }}@endif
 					</td>
 					<td class="d-none">
 						@if(!empty(FindObjectInArrayByPropertyValue($products, 'id', $listItem->product_id)->product_group_id)) {{ FindObjectInArrayByPropertyValue($productGroups, 'id', FindObjectInArrayByPropertyValue($products, 'id', $listItem->product_id)->product_group_id)->name }} @else <span class="font-italic font-weight-light">{{ $__t('Ungrouped') }}</span> @endif
@@ -152,7 +154,8 @@
 	<div class="col-xs-12 col-md-8">
 		<div class="form-group">
 			<label class="text-larger font-weight-bold" for="notes">{{ $__t('Notes') }}</label>
-			<a id="save-description-button" class="btn btn-success btn-sm ml-1 mb-2 disabled" href="#">{{ $__t('Save') }}</a>
+			<a id="save-description-button" class="btn btn-success btn-sm ml-1 mb-2" href="#">{{ $__t('Save') }}</a>
+			<a id="clear-description-button" class="btn btn-danger btn-sm ml-1 mb-2" href="#">{{ $__t('Clear') }}</a>
 			<textarea class="form-control wysiwyg-editor" id="description" name="description">{{ FindObjectInArrayByPropertyValue($shoppingLists, 'id', $selectedShoppingListId)->description }}</textarea>
 		</div>
 	</div>

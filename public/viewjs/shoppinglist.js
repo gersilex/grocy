@@ -1,24 +1,10 @@
 ﻿var shoppingListTable = $('#shoppinglist-table').DataTable({
-	'paginate': false,
 	'order': [[1, 'asc']],
 	"orderFixed": [[3, 'asc']],
 	'columnDefs': [
 		{ 'orderable': false, 'targets': 0 },
 		{ 'visible': false, 'targets': 3 }
 	],
-	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
-	'scrollY': false,
-	'colReorder': true,
-	'stateSave': true,
-	'stateSaveParams': function(settings, data)
-	{
-		data.search.search = "";
-
-		data.columns.forEach(column =>
-		{
-			column.search.search = "";
-		});
-	},
 	'rowGroup': {
 		dataSrc: 3
 	}
@@ -26,7 +12,7 @@
 $('#shoppinglist-table tbody').removeClass("d-none");
 shoppingListTable.columns.adjust().draw();
 
-$("#search").on("keyup", function()
+$("#search").on("keyup", Delay(function()
 {
 	var value = $(this).val();
 	if (value === "all")
@@ -35,7 +21,7 @@ $("#search").on("keyup", function()
 	}
 
 	shoppingListTable.search(value).draw();
-});
+}, 200));
 
 $("#status-filter").on("change", function()
 {
@@ -316,6 +302,15 @@ $(document).on("click", "#print-shopping-list-button", function(e)
 $("#description").on("summernote.change", function()
 {
 	$("#save-description-button").removeClass("disabled");
+
+	if ($("#description").summernote("isEmpty"))
+	{
+		$("#clear-description-button").addClass("disabled");
+	}
+	else
+	{
+		$("#clear-description-button").removeClass("disabled");
+	}
 });
 
 $(document).on("click", "#save-description-button", function(e)
@@ -330,7 +325,19 @@ $(document).on("click", "#save-description-button", function(e)
 		},
 		function(xhr)
 		{
-			console.log(xhr);
+			console.error(xhr);
 		}
 	);
 });
+
+$(document).on("click", "#clear-description-button", function(e)
+{
+	e.preventDefault();
+	document.activeElement.blur();
+
+	$("#description").summernote("reset");
+	$("#save-description-button").click();
+});
+
+$("#description").trigger("summernote.change");
+$("#save-description-button").addClass("disabled");

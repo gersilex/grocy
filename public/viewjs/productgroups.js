@@ -1,27 +1,13 @@
 ﻿var groupsTable = $('#productgroups-table').DataTable({
-	'paginate': false,
 	'order': [[1, 'asc']],
 	'columnDefs': [
 		{ 'orderable': false, 'targets': 0 }
-	],
-	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
-	'scrollY': false,
-	'colReorder': true,
-	'stateSave': true,
-	'stateSaveParams': function(settings, data)
-	{
-		data.search.search = "";
-
-		data.columns.forEach(column =>
-		{
-			column.search.search = "";
-		});
-	}
+	]
 });
 $('#productgroups-table tbody').removeClass("d-none");
 groupsTable.columns.adjust().draw();
 
-$("#search").on("keyup", function()
+$("#search").on("keyup", Delay(function()
 {
 	var value = $(this).val();
 	if (value === "all")
@@ -30,7 +16,7 @@ $("#search").on("keyup", function()
 	}
 
 	groupsTable.search(value).draw();
-});
+}, 200));
 
 $(document).on('click', '.product-group-delete-button', function(e)
 {

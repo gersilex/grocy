@@ -1,5 +1,4 @@
 ﻿var stockOverviewTable = $('#stock-overview-table').DataTable({
-	'paginate': false,
 	'order': [[3, 'asc']],
 	'columnDefs': [
 		{ 'orderable': false, 'targets': 0 },
@@ -7,19 +6,6 @@
 		{ 'visible': false, 'targets': 5 },
 		{ 'visible': false, 'targets': 6 }
 	],
-	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
-	'scrollY': false,
-	'colReorder': true,
-	'stateSave': true,
-	'stateSaveParams': function(settings, data)
-	{
-		data.search.search = "";
-
-		data.columns.forEach(column =>
-		{
-			column.search.search = "";
-		});
-	}
 });
 $('#stock-overview-table tbody').removeClass("d-none");
 stockOverviewTable.columns.adjust().draw();
@@ -67,7 +53,7 @@ $(".status-filter-button").on("click", function()
 	$("#status-filter").trigger("change");
 });
 
-$("#search").on("keyup", function()
+$("#search").on("keyup", Delay(function()
 {
 	var value = $(this).val();
 	if (value === "all")
@@ -76,7 +62,7 @@ $("#search").on("keyup", function()
 	}
 
 	stockOverviewTable.search(value).draw();
-});
+}, 200));
 
 $(document).on('click', '.product-consume-button', function(e)
 {
@@ -312,28 +298,37 @@ function RefreshProductRow(productId)
 	Grocy.Api.Get('stock/products/' + productId,
 		function(result)
 		{
+			// Also refresh the parent product, if any
+			if (result.product.parent_product_id !== null && !result.product.parent_product_id.toString().isEmpty())
+			{
+				RefreshProductRow(result.product.parent_product_id);
+			}
+
 			var productRow = $('#product-' + productId + '-row');
-			var expiringThreshold = moment().add("-" + $("#info-expiring-products").data("next-x-days"), "days");
+			var expiringThreshold = moment().add($("#info-expiring-products").data("next-x-days"), "days");
 			var now = moment();
 			var nextBestBeforeDate = moment(result.next_best_before_date);
 			
 			productRow.removeClass("table-warning");
 			productRow.removeClass("table-danger");
+			productRow.removeClass("table-info");
+			productRow.removeClass("d-none");
+			productRow.removeAttr("style");
 			if (now.isAfter(nextBestBeforeDate))
 			{
 				productRow.addClass("table-danger");
 			}
-			else if (nextBestBeforeDate.isAfter(expiringThreshold))
+			else if (nextBestBeforeDate.isBefore(expiringThreshold))
 			{
 				productRow.addClass("table-warning");
 			}
 
-			if (result.stock_amount <= 0)
+			if (result.stock_amount == 0 && result.product.min_stock_amount == 0)
 			{
 				$('#product-' + productId + '-row').fadeOut(500, function()
 				{
 					$(this).tooltip("hide");
-					$(this).remove();
+					$(this).addClass("d-none");
 				});
 			}
 			else
@@ -366,6 +361,11 @@ function RefreshProductRow(productId)
 						$(this).text("").fadeIn(500);
 					}
 				});
+
+				if (result.stock_amount == 0 && result.product.min_stock_amount > 0)
+				{
+					productRow.addClass("table-info");
+				}
 			}
 
 			$('#product-' + productId + '-next-best-before-date').parent().effect('highlight', {}, 500);
@@ -388,10 +388,32 @@ function RefreshProductRow(productId)
 				$('#product-' + productId + '-opened-amount').text("");
 			}
 
+			if (parseInt(result.is_aggregated_amount) === 1)
+			{
+				$('#product-' + productId + '-amount-aggregated').fadeOut(500, function()
+				{
+					$(this).text(result.stock_amount_aggregated).fadeIn(500);
+				});
+
+				if (result.stock_amount_opened_aggregated > 0)
+				{
+					$('#product-' + productId + '-opened-amount-aggregated').parent().effect('highlight', {}, 500);
+					$('#product-' + productId + '-opened-amount-aggregated').fadeOut(500, function ()
+					{
+						$(this).text(__t('%s opened', result.stock_amount_opened_aggregated)).fadeIn(500);
+					});
+				}
+				else
+				{
+					$('#product-' + productId + '-opened-amount-aggregated').text("");
+				}
+			}
+
 			// Needs to be delayed because of the animation above the date-text would be wrong if fired immediately...
 			setTimeout(function()
 			{
 				RefreshContextualTimeago();
+				RefreshLocaleNumberDisplay();
 			}, 600);
 		},
 		function(xhr)

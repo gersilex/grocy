@@ -53,7 +53,7 @@ See the integrated Swagger UI instance on [/api](https://demo.grocy.info/api).
 ### Barcode readers & camera scanning
 Some fields also allow to select a value by scanning a barcode. It works best when your barcode reader prefixes every barcode with a letter which is normally not part of a item name (I use a `$`) and sends a `TAB` after a scan.
 
-Additionally it's also possible to use your device camera to scan a barcode by using the camera button on the right side of the corresponding field (powered by [QuaggaJS](https://github.com/serratus/quaggaJS), totally offline / client-side camera stream processing). Quick video demo: https://www.youtube.com/watch?v=Y5YH6IJFnfc
+Additionally it's also possible to use your device camera to scan a barcode by using the camera button on the right side of the corresponding field (powered by [QuaggaJS](https://github.com/serratus/quaggaJS), totally offline / client-side camera stream processing, please note due to browser security restrictions, this only works when serving grocy via a secure connection (`https://`)). Quick video demo: https://www.youtube.com/watch?v=Y5YH6IJFnfc
 
 ### Input shorthands for date fields
 For (productivity) reasons all date (and time) input fields use the ISO-8601 format regardless of localization.
@@ -65,8 +65,10 @@ The following shorthands are available:
 - `YYYYMMe` or `YYYYMM+` gets expanded to the end of the given month in the given year in proper notation
   - Example: `201807e` will be converted to `2018-07-31`
 - `x` gets expanded to `2999-12-31` (which I use for products which never expire)
-- Down/up arrow keys will increase/decrease the date by one day
+- Down/up arrow keys will increase/decrease the date by 1 day
 - Right/left arrow keys will increase/decrease the date by 1 week
+- Shift + down/up arrow keys will increase/decrease the date by 1 month
+- Shift + right/left arrow keys will increase/decrease the date by 1 year
 
 ### Keyboard shorthands for buttons
 Wherever a button contains a bold highlighted letter, this is a shortcut key.

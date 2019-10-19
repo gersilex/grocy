@@ -21,7 +21,7 @@ msgstr ""
 "X-Domain: grocy/strings\n"
 
 msgid "Stock overview"
-msgstr "Panoramica della dispensa"
+msgstr "Riepilogo della dispensa"
 
 msgid "%s product expires"
 msgid_plural "%s products expiring"
@@ -1652,28 +1652,102 @@ msgid "Added %1$s of %2$s to the shopping list \"%3$s\""
 msgstr "Aggiunti %1$s di %2$s alla lista della spesa \"%3$s\""
 
 msgid "Output"
-msgstr ""
+msgstr "Uscita"
 
 msgid "Energy (kcal)"
-msgstr ""
+msgstr "Energia (kcal)"
 
 msgid "Per stock quantity unit"
-msgstr ""
+msgstr "Unità quantitativa per dispensa"
 
 msgid "Barcode scanner testing"
-msgstr ""
+msgstr "Test dello scanner di codici a barre"
 
 msgid "Expected barcode"
-msgstr ""
+msgstr "Atteso Codice a barre"
 
 msgid "Scan field"
-msgstr ""
+msgstr "Campo di scansione"
 
 msgid "Scanned barcodes"
-msgstr ""
+msgstr "Codici a barre scansionati"
 
 msgid "Hit"
-msgstr ""
+msgstr "Scansionato"
 
 msgid "Miss"
+msgstr "Non scansionato"
+
+msgid "Display recipe"
+msgstr "Mostra la ricetta"
+
+msgid "Accumulate sub products min. stock amount"
+msgstr "Quantità in dispensa minima di sottoprodotti accumulati"
+
+msgid ""
+"If enabled, the min. stock amount of sub products will be accumulated into "
+"this product, means the sub product will never be \"missing\", only this "
+"product"
 msgstr ""
+"Se abilitato,. la quantità  min. di sottoprodotti sarà accumulata in questo "
+"prodotto, il che significa che il sottoprodotto non sarà mai \"mancante\", "
+"solo questo prodotto"
+
+msgid "Are you sure to remove this conversion?"
+msgstr "Sei sicuro di rimuovere questa conversione?"
+
+msgid "Unit price"
+msgstr "Prezzo unitario"
+
+msgid "Total price"
+msgstr "Prezzo totale"
+
+msgid "in %s and based on the purchase quantity unit"
+msgstr "in %se basato sull'unità quantitativa di acquisto"
+
+msgid "Unlimited"
+msgstr "Illimitato"
+
+msgid "Clear"
+msgstr "Liberato"
+
+msgid "Are you sure to remove the included recipe \"%s\"?"
+msgstr "Rimuovere la ricetta inclusa \"%s\"?"
+
+msgid "Period interval"
+msgstr "Intervallo di tempo"
+
+msgid ""
+"This means the next execution of this chore should only be scheduled every "
+"%s days"
+msgstr ""
+"Questo significa che la prossima esecuzione di questa faccenda dovrebbe "
+"essere programmata solo ogni %s giorni"
+
+msgid ""
+"This means the next execution of this chore should only be scheduled every "
+"%s weeks"
+msgstr ""
+"Questo significa che la prossima esecuzione di questa faccenda dovrebbe "
+"essere programmata solo ogni %s settimane"
+
+msgid ""
+"This means the next execution of this chore should only be scheduled every "
+"%s months"
+msgstr ""
+"Questo significa che la prossima esecuzione di questa faccenda dovrebbe "
+"essere programmata solo ogni %s mesi"
+
+msgid ""
+"This means the next execution of this chore is scheduled 1 year after the "
+"last execution"
+msgstr ""
+"Questo significa che la prossima esecuzione di questa faccenda è prevista 1 "
+"anno dopo l'ultima esecuzione"
+
+msgid ""
+"This means the next execution of this chore should only be scheduled every "
+"%s years"
+msgstr ""
+"Questo significa che la prossima esecuzione di questa faccenda dovrebbe "
+"essere programmata solo ogni %s anni"

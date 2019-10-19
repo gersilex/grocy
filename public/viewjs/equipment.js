@@ -1,19 +1,5 @@
 ﻿var equipmentTable = $('#equipment-table').DataTable({
-	'paginate': false,
 	'order': [[0, 'asc']],
-	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
-	'scrollY': false,
-	'colReorder': true,
-	'stateSave': true,
-	'stateSaveParams': function(settings, data)
-	{
-		data.search.search = "";
-
-		data.columns.forEach(column =>
-		{
-			column.search.search = "";
-		});
-	},
 	'select': 'single',
 	'initComplete': function()
 	{
@@ -69,7 +55,7 @@ function DisplayEquipment(id)
 	);
 }
 
-$("#search").on("keyup", function()
+$("#search").on("keyup", Delay(function()
 {
 	var value = $(this).val();
 	if (value === "all")
@@ -78,7 +64,7 @@ $("#search").on("keyup", function()
 	}
 
 	equipmentTable.search(value).draw();
-});
+}, 200));
 
 $(document).on('click', '.equipment-delete-button', function (e)
 {
@@ -131,4 +117,5 @@ $("#selectedEquipmentDescriptionToggleFullscreenButton").on('click', function(e)
 	$("#selectedEquipmentDescriptionCard").toggleClass("fullscreen");
 	$("#selectedEquipmentDescriptionCard .card-header").toggleClass("fixed-top");
 	$("#selectedEquipmentDescriptionCard .card-body").toggleClass("mt-5");
+	$("body").toggleClass("fullscreen-card");
 });

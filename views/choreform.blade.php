@@ -86,6 +86,19 @@
 
 			<input type="hidden" id="period_config" name="period_config" value="@if($mode == 'edit'){{ $chore->period_config }}@endif">
 
+			@php if($mode == 'edit') { $value = $chore->period_interval; } else { $value = 1; } @endphp
+			@include('components.numberpicker', array(
+				'id' => 'period_interval',
+				'label' => 'Period interval',
+				'value' => $value,
+				'min' => '1',
+				'additionalCssClasses' => 'input-group-chore-period-type',
+				'invalidFeedback' => $__t('This cannot be lower than %s', '1'),
+				'additionalGroupCssClasses' => 'period-type-input period-type-daily period-type-weekly period-type-monthly period-type-yearly',
+				'hintId' => 'chore-period-interval-info'
+			))
+
+			@if(GROCY_FEATURE_FLAG_CHORES_ASSIGNMENTS)
 			<div class="form-group">
 				<label for="assignment_type">{{ $__t('Assignment type') }} <span id="chore-assignment-type-info" class="small text-muted"></span></label>
 				<select required class="form-control input-group-chore-assignment-type" id="assignment_type" name="assignment_type">
@@ -105,6 +118,10 @@
 				</select>
 				<div class="invalid-feedback">{{ $__t('This assignment type requires that at least one is assigned') }}</div>
 			</div>
+			@else
+			<input type="hidden" id="assignment_type" name="assignment_type" value="{{ \Grocy\Services\ChoresService::CHORE_ASSIGNMENT_TYPE_NO_ASSIGNMENT }}">
+			<input type="hidden" id="assignment_config" name="assignment_config" value="">
+			@endif
 
 			<div class="form-group">
 				<div class="form-check">

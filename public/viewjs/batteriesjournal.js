@@ -3,20 +3,7 @@
 	'order': [[1, 'desc']],
 	'columnDefs': [
 		{ 'orderable': false, 'targets': 0 }
-	],
-	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
-	'scrollY': false,
-	'colReorder': true,
-	'stateSave': true,
-	'stateSaveParams': function(settings, data)
-	{
-		data.search.search = "";
-
-		data.columns.forEach(column =>
-		{
-			column.search.search = "";
-		});
-	}
+	]
 });
 $('#batteries-journal-table tbody').removeClass("d-none");
 batteriesJournalTable.columns.adjust().draw();
@@ -33,7 +20,7 @@ $("#battery-filter").on("change", function()
 	batteriesJournalTable.column(1).search(text).draw();
 });
 
-$("#search").on("keyup", function()
+$("#search").on("keyup", Delay(function()
 {
 	var value = $(this).val();
 	if (value === "all")
@@ -42,7 +29,7 @@ $("#search").on("keyup", function()
 	}
 
 	batteriesJournalTable.search(value).draw();
-});
+}, 200));
 
 if (typeof GetUriParam("battery") !== "undefined")
 {

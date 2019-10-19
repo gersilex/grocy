@@ -1,22 +1,8 @@
 ﻿var apiKeysTable = $('#apikeys-table').DataTable({
-	'paginate': false,
 	'order': [[4, 'desc']],
 	'columnDefs': [
 		{ 'orderable': false, 'targets': 0 }
-	],
-	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
-	'scrollY': false,
-	'colReorder': true,
-	'stateSave': true,
-	'stateSaveParams': function(settings, data)
-	{
-		data.search.search = "";
-
-		data.columns.forEach(column =>
-		{
-			column.search.search = "";
-		});
-	}
+	]
 });
 $('#apikeys-table tbody').removeClass("d-none");
 apiKeysTable.columns.adjust().draw();
@@ -27,7 +13,7 @@ if (createdApiKeyId !== undefined)
 	$('#apiKeyRow_' + createdApiKeyId).effect('highlight', {}, 3000);
 }
 
-$("#search").on("keyup", function()
+$("#search").on("keyup", Delay(function()
 {
 	var value = $(this).val();
 	if (value === "all")
@@ -36,7 +22,7 @@ $("#search").on("keyup", function()
 	}
 
 	apiKeysTable.search(value).draw();
-});
+}, 200));
 
 $(document).on('click', '.apikey-delete-button', function (e)
 {

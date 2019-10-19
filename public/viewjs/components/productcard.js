@@ -52,6 +52,10 @@ Grocy.Components.ProductCard.Refresh = function(productId)
 			{
 				$('#productcard-product-average-shelf-life').text(__t("Unknown"));
 			}
+			else if (parseInt(productDetails.average_shelf_life_days) > 73000) // > 200 years aka forever
+			{
+				$('#productcard-product-average-shelf-life').text(__t("Unlimited"));
+			}
 			else
 			{
 				$('#productcard-product-average-shelf-life').text(moment.duration(productDetails.average_shelf_life_days, "days").humanize());
@@ -67,7 +71,9 @@ Grocy.Components.ProductCard.Refresh = function(productId)
 			}
 
 			$('#productcard-product-edit-button').attr("href", U("/product/" + productDetails.product.id.toString() + '?' + 'returnto=' + encodeURIComponent(Grocy.CurrentUrlRelative)));
+			$('#productcard-product-journal-button').attr("href", U("/stockjournal?embedded&product=" + productDetails.product.id.toString()));
 			$('#productcard-product-edit-button').removeClass("disabled");
+			$('#productcard-product-journal-button').removeClass("disabled");
 
 			if (productDetails.last_price !== null)
 			{

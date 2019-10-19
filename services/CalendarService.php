@@ -7,6 +7,7 @@ use \Grocy\Services\TasksService;
 use \Grocy\Services\ChoresService;
 use \Grocy\Services\BatteriesService;
 use \Grocy\Services\UsersService;
+use \Grocy\Helpers\UrlManager;
 
 class CalendarService extends BaseService
 {
@@ -17,12 +18,14 @@ class CalendarService extends BaseService
 		$this->TasksService = new TasksService();
 		$this->ChoresService = new ChoresService();
 		$this->BatteriesService = new BatteriesService();
+		$this->UrlManager = new UrlManager(GROCY_BASE_URL);
 	}
 
 	protected $StockService;
 	protected $TasksService;
 	protected $ChoresService;
 	protected $BatteriesService;
+	protected $UrlManager;
 
 	public function GetEvents()
 	{
@@ -99,7 +102,8 @@ class CalendarService extends BaseService
 				$mealPlanRecipeEvents[] = array(
 					'title' => $titlePrefix . FindObjectInArrayByPropertyValue($recipes, 'id', $recipeOfCurrentDay->includes_recipe_id)->name,
 					'start' => FindObjectInArrayByPropertyValue($recipes, 'id', $recipeOfCurrentDay->recipe_id)->name,
-					'date_format' => 'date'
+					'date_format' => 'date',
+					'description' => $this->UrlManager->ConstructUrl('/mealplan' . '?week=' . FindObjectInArrayByPropertyValue($recipes, 'id', $recipeOfCurrentDay->recipe_id)->name)
 				);
 			}
 		}

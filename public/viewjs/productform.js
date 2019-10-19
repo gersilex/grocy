@@ -49,7 +49,11 @@
 						Grocy.Api.UploadFile($("#product-picture")[0].files[0], 'productpictures', jsonData.picture_file_name,
 							function(result)
 							{
-								if (redirectDestination == "reload")
+								if (GetUriParam("closeAfterCreation") !== undefined)
+								{
+									window.close();
+								}
+								else if (redirectDestination == "reload")
 								{
 									window.location.reload();
 								}
@@ -67,7 +71,11 @@
 					}
 					else
 					{
-						if (redirectDestination == "reload")
+						if (GetUriParam("closeAfterCreation") !== undefined)
+						{
+							window.close();
+						}
+						else if (redirectDestination == "reload")
 						{
 							window.location.reload();
 						}
@@ -112,7 +120,11 @@
 						Grocy.Api.UploadFile($("#product-picture")[0].files[0], 'productpictures', jsonData.picture_file_name,
 							function(result)
 							{
-								if (redirectDestination == "reload")
+								if (GetUriParam("closeAfterCreation") !== undefined)
+								{
+									window.close();
+								}
+								else if (redirectDestination == "reload")
 								{
 									window.location.reload();
 								}
@@ -130,7 +142,11 @@
 					}
 					else
 					{
-						if (redirectDestination == "reload")
+						if (GetUriParam("closeAfterCreation") !== undefined)
+						{
+							window.close();
+						}
+						else if (redirectDestination == "reload")
 						{
 							window.location.reload();
 						}
@@ -222,6 +238,7 @@ $('.input-group-qu').on('change', function(e)
 $('#product-form input').keyup(function(event)
 {
 	Grocy.FrontendHelpers.ValidateForm('product-form');
+	$(".input-group-qu").trigger("change");
 
 	if (document.getElementById('product-form').checkValidity() === false) //There is at least one validation error
 	{
@@ -333,26 +350,12 @@ if (Grocy.EditMode === 'create')
 }
 
 var quConversionsTable = $('#qu-conversions-table').DataTable({
-	'paginate': false,
 	'order': [[1, 'asc']],
 	"orderFixed": [[3, 'asc']],
 	'columnDefs': [
 		{ 'orderable': false, 'targets': 0 },
 		{ 'visible': false, 'targets': 3 }
 	],
-	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
-	'scrollY': false,
-	'colReorder': true,
-	'stateSave': true,
-	'stateSaveParams': function(settings, data)
-	{
-		data.search.search = "";
-
-		data.columns.forEach(column =>
-		{
-			column.search.search = "";
-		});
-	},
 	'rowGroup': {
 		dataSrc: 3
 	}

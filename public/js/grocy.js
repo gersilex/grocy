@@ -298,7 +298,20 @@ RefreshContextualTimeago = function()
 	$("time.timeago").each(function()
 	{
 		var element = $(this);
+
+		if (!element.hasAttr("datetime"))
+		{
+			element.text("")
+			return
+		}
+
 		var timestamp = element.attr("datetime");
+
+		if (timestamp.isEmpty())
+		{
+			element.text("")
+			return
+		}
 
 		var isNever = timestamp && timestamp.substring(0, 10) == "2999-12-31";
 		var isToday = timestamp && timestamp.substring(0, 10) == moment().format("YYYY-MM-DD");
@@ -515,18 +528,33 @@ $("#about-dialog-link").on("click", function()
 
 function RefreshLocaleNumberDisplay()
 {
-	$(".locale-number-format[data-format='currency']").each(function()
+	$(".locale-number.locale-number-currency").each(function()
 	{
+		if (isNaN(parseFloat($(this).text())))
+		{
+			return;
+		}
+
 		$(this).text(parseFloat($(this).text()).toLocaleString(undefined, { style: "currency", currency: Grocy.Currency }));
 	});
 
-	$(".locale-number-format[data-format='quantity-amount']").each(function()
+	$(".locale-number.locale-number-quantity-amount").each(function()
 	{
+		if (isNaN(parseFloat($(this).text())))
+		{
+			return;
+		}
+
 		$(this).text(parseFloat($(this).text()).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 3 }));
 	});
 
-	$(".locale-number-format[data-format='generic']").each(function ()
+	$(".locale-number.locale-number-generic").each(function ()
 	{
+		if (isNaN(parseFloat($(this).text())))
+		{
+			return;
+		}
+		
 		$(this).text(parseFloat($(this).text()).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }));
 	});
 }
@@ -571,5 +599,48 @@ $(window).on("message", function(e)
 	else if (data.Message === "CloseAllModals")
 	{
 		bootbox.hideAll();
+	}
+});
+
+$(document).on("click", ".show-as-dialog-link", function(e)
+{
+	e.preventDefault();
+
+	var link = $(e.currentTarget).attr("href");
+	
+	bootbox.dialog({
+		message: '<iframe height="650px" class="embed-responsive" src="' + link + '"></iframe>',
+		size: 'large',
+		backdrop: true,
+		closeButton: false,
+		buttons: {
+			ok: {
+				label: __t('OK'),
+				className: 'btn-success responsive-button',
+				callback: function()
+				{
+					bootbox.hideAll();
+				}
+			}
+		}
+	});
+});
+
+// Default DataTables initialisation settings
+$.extend(true, $.fn.dataTable.defaults, {
+	'paginate': false,
+	'deferRender': true,
+	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
+	'scrollY': false,
+	'colReorder': true,
+	'stateSave': true,
+	'stateSaveParams': function (settings, data)
+	{
+		data.search.search = "";
+
+		data.columns.forEach(column =>
+		{
+			column.search.search = "";
+		});
 	}
 });

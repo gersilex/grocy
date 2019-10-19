@@ -75,7 +75,7 @@
 
 			@if(GROCY_FEATURE_FLAG_STOCK_LOCATION_TRACKING)
 			<div class="form-group">
-				<label for="location_id">{{ $__t('Location') }}</label>
+				<label for="location_id">{{ $__t('Default location') }}</label>
 				<select required class="form-control" id="location_id" name="location_id">
 					<option></option>
 					@foreach($locations as $location)
@@ -94,8 +94,19 @@
 				'label' => 'Minimum stock amount',
 				'min' => 0,
 				'value' => $value,
-				'invalidFeedback' => $__t('The amount cannot be lower than %s', '0')
+				'invalidFeedback' => $__t('The amount cannot be lower than %s', '0'),
+				'additionalGroupCssClasses' => 'mb-1'
 			))
+
+			<div class="form-group">
+				<div class="form-check">
+					<input type="hidden" name="cumulate_min_stock_amount_of_sub_products" value="0">
+					<input @if($mode == 'edit' && $product->cumulate_min_stock_amount_of_sub_products == 1) checked @endif class="form-check-input" type="checkbox" id="cumulate_min_stock_amount_of_sub_products" name="cumulate_min_stock_amount_of_sub_products" value="1">
+					<label class="form-check-label" for="cumulate_min_stock_amount_of_sub_products">{{ $__t('Accumulate sub products min. stock amount') }}
+						<span class="text-muted small">{{ $__t('If enabled, the min. stock amount of sub products will be accumulated into this product, means the sub product will never be "missing", only this product') }}</span>
+					</label>
+				</div>
+			</div>
 
 			@php if($mode == 'edit') { $value = $product->default_best_before_days; } else { $value = 0; } @endphp
 			@include('components.numberpicker', array(
@@ -168,7 +179,7 @@
 				</div>
 			</div>
 
-			<div class="form-group">
+			<div class="form-group mb-1">
 				<div class="form-check">
 					<input type="hidden" name="enable_tare_weight_handling" value="0">
 					<input @if($mode == 'edit' && $product->enable_tare_weight_handling == 1) checked @endif class="form-check-input" type="checkbox" id="enable_tare_weight_handling" name="enable_tare_weight_handling" value="1">
@@ -257,32 +268,34 @@
 			<tbody class="d-none">
 				@if($mode == "edit")
 				@foreach($quConversions as $quConversion)
-				<tr>
-					<td class="fit-content border-right">
-						<a class="btn btn-sm btn-info qu-conversion-edit-button @if($quConversion->product_id == null) disabled @endif" href="#" data-qu-conversion-id="{{ $quConversion->id }}">
-							<i class="fas fa-edit"></i>
-						</a>
-						<a class="btn btn-sm btn-danger qu-conversion-delete-button @if($quConversion->product_id == null) disabled @endif" href="#" data-qu-conversion-id="{{ $quConversion->id }}">
-							<i class="fas fa-trash"></i>
-						</a>
-					</td>
-					<td>
-						{{ $quConversion->factor }}
-					</td>
-					<td>
-						{{ FindObjectInArrayByPropertyValue($quantityunits, 'id', $quConversion->to_qu_id)->name }}
-					</td>
-					<td class="d-none">
-						@if($quConversion->product_id != null)
-						{{ $__t('Product overrides') }}
-						@else
-						{{ $__t('Default conversions') }}
-						@endif
-					</td>
-					<td class="d-none">
-						from_qu_id xx{{ $quConversion->from_qu_id }}xx
-					</td>
-				</tr>
+					@if($quConversion->product_id == $product->id || $quConversion->product_id == null)
+					<tr>
+						<td class="fit-content border-right">
+							<a class="btn btn-sm btn-info qu-conversion-edit-button @if($quConversion->product_id == null) disabled @endif" href="#" data-qu-conversion-id="{{ $quConversion->id }}">
+								<i class="fas fa-edit"></i>
+							</a>
+							<a class="btn btn-sm btn-danger qu-conversion-delete-button @if($quConversion->product_id == null) disabled @endif" href="#" data-qu-conversion-id="{{ $quConversion->id }}">
+								<i class="fas fa-trash"></i>
+							</a>
+						</td>
+						<td>
+							<span class="locale-number locale-number-quantity-amount">{{ $quConversion->factor }}</span>
+						</td>
+						<td>
+							{{ FindObjectInArrayByPropertyValue($quantityunits, 'id', $quConversion->to_qu_id)->name }}
+						</td>
+						<td class="d-none">
+							@if($quConversion->product_id != null)
+							{{ $__t('Product overrides') }}
+							@else
+							{{ $__t('Default conversions') }}
+							@endif
+						</td>
+						<td class="d-none">
+							from_qu_id xx{{ $quConversion->from_qu_id }}xx
+						</td>
+					</tr>
+					@endif
 				@endforeach
 				@endif
 			</tbody>

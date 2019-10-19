@@ -1,27 +1,13 @@
 ﻿var choresOverviewTable = $('#chores-overview-table').DataTable({
-	'paginate': false,
 	'order': [[2, 'desc']],
 	'columnDefs': [
 		{ 'orderable': false, 'targets': 0 }
-	],
-	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
-	'scrollY': false,
-	'colReorder': true,
-	'stateSave': true,
-	'stateSaveParams': function(settings, data)
-	{
-		data.search.search = "";
-
-		data.columns.forEach(column =>
-		{
-			column.search.search = "";
-		});
-	}
+	]
 });
 $('#chores-overview-table tbody').removeClass("d-none");
 choresOverviewTable.columns.adjust().draw();
 
-$("#search").on("keyup", function()
+$("#search").on("keyup", Delay(function()
 {
 	var value = $(this).val();
 	if (value === "all")
@@ -30,7 +16,7 @@ $("#search").on("keyup", function()
 	}
 
 	choresOverviewTable.search(value).draw();
-});
+}, 200));
 
 $("#status-filter").on("change", function()
 {

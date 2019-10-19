@@ -1,22 +1,8 @@
 ﻿var recipesTables = $('#recipes-table').DataTable({
-	'paginate': false,
 	'order': [[0, 'asc']],
 	'columnDefs': [
 		{ 'orderData': 2, 'targets': 1 }
 	],
-	'language': IsJsonString(__t('datatables_localization')) ? JSON.parse(__t('datatables_localization')) : { },
-	'scrollY': false,
-	'colReorder': true,
-	'stateSave': true,
-	'stateSaveParams': function(settings, data)
-	{
-		data.search.search = "";
-
-		data.columns.forEach(column =>
-		{
-			column.search.search = "";
-		});
-	},
 	'select': 'single',
 	'initComplete': function()
 	{
@@ -58,7 +44,7 @@ $("a[data-toggle='tab']").on("shown.bs.tab", function(e)
 	window.localStorage.setItem("recipes_last_tab_id", tabId);
 });
 
-$("#search").on("keyup", function()
+$("#search").on("keyup", Delay(function()
 {
 	var value = $(this).val();
 
@@ -66,7 +52,7 @@ $("#search").on("keyup", function()
 
 	$(".recipe-gallery-item-container").removeClass("d-none");
 	$(".recipe-gallery-item-container .card-title:not(:contains_case_insensitive(" + value + "))").parent().parent().parent().parent().addClass("d-none");
-});
+}, 200));
 
 $("#status-filter").on("change", function()
 {

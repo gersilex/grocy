@@ -36,7 +36,7 @@
 	<link href="{{ $U('/node_modules/tempusdominus-bootstrap-4/build/css/tempusdominus-bootstrap-4.min.css?v=', true) }}{{ $version }}" rel="stylesheet">
 	<link href="{{ $U('/node_modules/summernote/dist/summernote-bs4.css?v=', true) }}{{ $version }}" rel="stylesheet">
 	<link href="{{ $U('/node_modules/bootstrap-select/dist/css/bootstrap-select.min.css?v=', true) }}{{ $version }}" rel="stylesheet">
-	<link href="{{ $U('/components_unmanaged/noto-sans-v6-latin/noto-sans-v6-latin.css?v=', true) }}{{ $version }}" rel="stylesheet">
+	<link href="{{ $U('/components_unmanaged/noto-sans-v9-latin/noto-sans-v9-latin.min.css?v=', true) }}{{ $version }}" rel="stylesheet">
 	<link href="{{ $U('/css/grocy.css?v=', true) }}{{ $version }}" rel="stylesheet">
 	<link href="{{ $U('/css/grocy_night_mode.css?v=', true) }}{{ $version }}" rel="stylesheet">
 	@stack('pageStyles')
@@ -187,6 +187,8 @@
 						<span class="nav-link-text">{{ $__t('Calendar') }}</span>
 					</a>
 				</li>
+				@endif
+				@if(GROCY_FEATURE_FLAG_RECIPES)
 				<li class="nav-item" data-toggle="tooltip" data-placement="right" title="{{ $__t('Meal plan') }}" data-nav-for-page="mealplan">
 					<a class="nav-link discrete-link" href="{{ $U('/mealplan') }}">
 						<i class="fas fa-paper-plane"></i>

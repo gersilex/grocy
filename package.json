@@ -10,7 +10,7 @@
 		"bootstrap": "^4.3.1",
 		"bootstrap-select": "^1.13.10",
 		"bootstrap-switch-button": "https://github.com/walidbagh/bootstrap-switch-button#Fix-module-export",
-		"chart.js": "^2.8.0",
+		"chart.js": "^2.9.4",
 		"datatables.net": "^1.10.19",
 		"datatables.net-bs4": "^1.10.19",
 		"datatables.net-colreorder": "^1.5.1",
